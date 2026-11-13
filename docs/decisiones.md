@@ -46,3 +46,41 @@ Cada decisión indica las opciones que se consideraron, lo que se eligió y por 
 - **Por qué:**
   - Misma plataforma y misma forma de lanzar las tres versiones.
   - Clojure compilado por adelantado evita medir la compilación que haría en cada arranque.
+
+## Bloque 1 · Requerimientos
+
+Se aceptaron las recomendaciones (el equipo respondió "continúa"). Pueden cambiar en la revisión del bloque.
+
+### D1.1 · Cómo avanza el tiempo
+- **Opciones:** por eventos o minuto a minuto.
+- **Elegido:** por eventos. La simulación solo actúa cuando llega un vuelo o se libera una pista.
+- **Por qué:**
+  - Es determinista.
+  - El costo depende del número de vuelos, no de la duración simulada.
+  - En los tres lenguajes se expresa como una reducción (`reduce`/`fold`) sobre el estado del aeropuerto.
+
+### D1.2 · Prioridad (RN05)
+- **Elegido:** primero Emergencia; luego Aterrizaje antes que Despegue; luego la hora programada más temprana;
+  luego el código menor.
+- **Por qué:** un avión en el aire consume combustible mientras espera.
+- **Precisión:** la prioridad se aplica **entre los vuelos que ya están esperando** cuando hay una pista libre
+  (RN04 y RN06). Ordenar toda la lista por prioridad sería un error: una emergencia programada a las 18:00
+  operaría antes que un vuelo de las 08:00.
+
+### D1.3 · Compatibilidad y ocupación (RN02 y RN03)
+- **Elegido:**
+  - Ligero: pista de 1.200 m o más; ocupa la pista 2 min.
+  - Mediano: 2.000 m o más; 3 min.
+  - Pesado: 2.800 m o más; 4 min.
+  - La pista debe estar operativa y permitir la operación.
+  - Entre las pistas libres compatibles se asigna la de identificador menor.
+  - Un vuelo sin pista compatible libre no bloquea a los de menor prioridad (RN06).
+
+### D1.4 · Entrada de datos
+- **Opciones:** teclado o archivos.
+- **Elegido:** dos archivos (pistas y vuelos) que se pasan como argumentos.
+- **Por qué:** el experimento necesita miles de vuelos, y eso no se puede escribir por teclado.
+
+### D1.5 · Alcance funcional
+- **Elegido:** RF01 a RF14, con las reglas RN01 a RN10 y las validaciones de `01_requerimientos.md`.
+- Retrasado = más de 15 minutos de retraso.
