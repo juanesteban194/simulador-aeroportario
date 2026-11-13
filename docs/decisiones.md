@@ -49,7 +49,7 @@ Cada decisión indica las opciones que se consideraron, lo que se eligió y por 
 
 ## Bloque 1 · Requerimientos
 
-Se aceptaron las recomendaciones (el equipo respondió "continúa"). Pueden cambiar en la revisión del bloque.
+Se aceptaron las recomendaciones. El documento se revisó y el bloque se cerró el 13 de noviembre de 2026.
 
 ### D1.1 · Cómo avanza el tiempo
 - **Opciones:** por eventos o minuto a minuto.

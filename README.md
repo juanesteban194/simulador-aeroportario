@@ -35,8 +35,8 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 | # | Bloque | Estado |
 |---|---|---|
 | 0 | Marco: repo, herramientas y equipo | ✅ |
-| 1 | Requerimientos ([01_requerimientos.md](docs/01_requerimientos.md)) | 🔍 en revisión |
-| 2 | Modelo y contrato funcional | — |
+| 1 | Requerimientos ([01_requerimientos.md](docs/01_requerimientos.md)) | ✅ |
+| 2 | Modelo y contrato funcional | ⏳ |
 | 3 | Diseño del experimento | — |
 | 4 | Criterios y clasificación | — |
 | 5 | Implementación (Scala → Java → Clojure) | — |
