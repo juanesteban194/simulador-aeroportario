@@ -1,0 +1,6 @@
+id,longitud,uso,estado
+P01,2600,Mixta,Operativa
+P02,2200,Despegue,Operativa
+P03,1500,Aterrizaje,Operativa
+P04,3500,Aterrizaje,Cerrada
+P05,abc,Mixta,Operativa

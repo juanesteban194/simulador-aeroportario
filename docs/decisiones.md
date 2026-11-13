@@ -84,3 +84,38 @@ Se aceptaron las recomendaciones. El documento se revisó y el bloque se cerró 
 ### D1.5 · Alcance funcional
 - **Elegido:** RF01 a RF14, con las reglas RN01 a RN10 y las validaciones de `01_requerimientos.md`.
 - Retrasado = más de 15 minutos de retraso.
+
+## Bloque 2 · Modelo y contrato
+
+Se aceptaron las recomendaciones. El detalle está en `02_modelo_y_contrato.md`.
+
+### D2.1 · Archivos de entrada
+- **Elegido:** CSV separado por comas, con encabezado. A cada campo se le hace `trim`, se conservan los campos
+  vacíos y los valores deben coincidir exactamente (mayúsculas incluidas).
+- **Por qué:** es la regla más simple de verificar y la misma en los tres lenguajes.
+
+### D2.2 · Salidas
+- **Elegido:** tres archivos (`operaciones.csv`, `errores.csv`, `reporte.txt`) y el reporte en pantalla.
+- **Por qué:**
+  - Con un millón de vuelos, imprimir cada operación en pantalla haría que el experimento midiera la consola.
+  - La equivalencia se verifica con `diff` byte a byte.
+
+### D2.3 · Representación
+- **Elegido:**
+  - Java: `record`, `enum` y `sealed interface Resultado`.
+  - Scala: `case class`, `enum` y `Either`.
+  - Clojure: `defrecord`, palabras clave y mapas `{:ok}`/`{:error}`.
+  - Los mismos módulos en los tres: Modelo, Lectura, Validación, TorreControl, Reportes y Main.
+
+### D2.4 · Algoritmo de simulación
+- **Elegido:** 12 filas precalculadas (`groupBy` + `sortBy`), un estado inmutable pequeño y una secuencia
+  perezosa de estados (`iterate` → `takeWhile` → `flatMap`).
+- **Por qué:**
+  - Da el mismo resultado que recorrer toda la cola (RN06).
+  - Tiene el mismo costo en los tres lenguajes, sin depender de colecciones que Java no trae.
+  - No usa recursión profunda (Java no optimiza la recursión de cola).
+
+### D2.5 · Números y horas
+- **Elegido:** tiempos y sumas en enteros de 64 bits; decimales solo al final, con 2 cifras, `HALF_UP` y
+  `Locale.ROOT`; horas en formato `D<día> HH:MM`.
+- **Por qué:** el resultado no depende del orden de las sumas ni de la configuración regional del equipo.

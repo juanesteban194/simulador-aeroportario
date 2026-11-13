@@ -1,0 +1,52 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 5 | válidos: 4 | inválidos: 1
+Vuelos | registros: 13 | válidos: 10 | inválidos: 3
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 9
+Retraso promedio: 1.56 min
+Retraso máximo: 4 min
+Vuelos retrasados (más de 15 min): 0 (0.00%)
+
+== RF09 · 5 vuelos más retrasados ==
+1. LA206 | retraso: 4 min | Despegue | P02
+2. LA209 | retraso: 4 min | Despegue | P02
+3. CM307 | retraso: 3 min | Aterrizaje | P01
+4. CM304 | retraso: 2 min | Aterrizaje | P01
+5. AV105 | retraso: 1 min | Despegue | P02
+
+== RF10 · Uso de pistas ==
+Período simulado: D1 08:00 a D1 08:22 (22 min)
+P01 | Operativa | operaciones: 4 | ocupada: 11 min | ocupación: 50.00%
+P02 | Operativa | operaciones: 4 | ocupada: 11 min | ocupación: 50.00%
+P03 | Operativa | operaciones: 1 | ocupada: 2 min | ocupación: 9.09%
+P04 | Cerrada | operaciones: 0 | ocupada: 0 min | ocupación: 0.00%
+
+== RF11 · Retraso promedio por aerolínea ==
+Copa | retraso promedio: 2.50 min | operaciones: 2
+LATAM | retraso promedio: 2.00 min | operaciones: 4
+Avianca | retraso promedio: 0.33 min | operaciones: 3
+
+== RF12 · Vuelos no asignables ==
+AV108 | Aterrizaje | Pesado | sin pista con longitud suficiente
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 5
+Despegue: 4
+Ligero: 3
+Mediano: 6
+Pesado: 0
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 13
+Vuelos válidos: 10
+Vuelos inválidos: 3
+Vuelos asignados: 9
+Vuelos no asignables: 1
+Retraso promedio: 1.56 min
+Vuelos retrasados: 0.00%
+Pista más usada: P01 (operaciones: 4)
+Aerolínea con mayor retraso promedio: Copa (2.50 min)
