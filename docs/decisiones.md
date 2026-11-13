@@ -160,7 +160,7 @@ Se aceptaron las recomendaciones. El detalle está en `03_experimento.md`. Bloqu
 
 ## Bloque 4 · Criterios y clasificación
 
-Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`.
+Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`. Bloque cerrado el 13 de noviembre de 2026; con él termina la documentación previa al código.
 
 ### D4.1 · Tiempo, memoria y rendimiento
 - **Elegido:** en cada escenario, puntaje proporcional al mejor (el mejor recibe 100). Luego se promedian los
