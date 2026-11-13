@@ -187,7 +187,8 @@ Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`. Bloque 
 
 ## Bloque 5 · Implementación
 
-Se aceptaron las recomendaciones. Bloque en curso: la versión Java está terminada y verificada.
+Se aceptaron las recomendaciones. Bloque en curso: Java y Clojure están terminados y verificados; Scala está
+escrito y falta compilarlo en el Mac.
 
 ### D5.1 · Orden de implementación
 - **Elegido:** Java → Scala → Clojure (antes: Scala → Java → Clojure).
@@ -228,7 +229,14 @@ Se aceptaron las recomendaciones. Bloque en curso: la versión Java está termin
   - el ejemplo E0;
   - los escenarios que tengan salida esperada (V1 y V2 en el repo; V3, V4, C1 y X1 al regenerarlos);
   - los 12 casos de robustez de `datos/robustez` (código de salida, archivos y stderr vacío).
-- **Resultado Java:** coincide en los 19 casos, incluido V4 (1.000.000 de vuelos).
+- **Resultados:**
+  - Java: coincide en los 19 casos, incluido V4 (1.000.000 de vuelos).
+  - Clojure: coincide en los 19 casos. Se probó con el Clojure 1.11 de Ubuntu, porque Leiningen no puede
+    descargar dependencias en ese entorno; la construcción oficial (`lein uberjar`, Clojure 1.12) se
+    verifica en el Mac.
+  - Scala: su sintaxis está revisada; se compila y verifica en el Mac.
+- `SIN_CONSTRUIR=1` usa los `.jar` ya construidos. `herramientas/entorno.sh` pone Homebrew y el JDK 21 en el
+  PATH, porque IntelliJ no hereda el de la terminal.
 
 ### D5.6 · Precisiones del contrato
 Al escribir la primera versión aparecieron detalles que el contrato no fijaba y en los que los lenguajes

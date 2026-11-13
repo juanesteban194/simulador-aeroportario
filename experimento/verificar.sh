@@ -6,6 +6,7 @@
 #
 #  Uso: bash experimento/verificar.sh [java] [scala] [clojure] [referencia]
 #       sin argumentos verifica java, scala y clojure. "referencia" prueba el propio verificador.
+#       SIN_CONSTRUIR=1 usa los .jar que ya existen, sin volver a construirlos.
 #  Termina con código 0 solo si todo coincide.
 # =============================================================================
 set -uo pipefail
@@ -15,6 +16,8 @@ LENGUAJES="${*:-java scala clojure}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 unset JAVA_TOOL_OPTIONS
+# shellcheck source=../herramientas/entorno.sh
+source "$RAIZ/herramientas/entorno.sh"
 ARCHIVOS="operaciones.csv errores.csv reporte.txt"
 
 # Ejecuta el programa del lenguaje $L con los argumentos dados (la misma JVM y opciones en los tres).
@@ -40,7 +43,7 @@ probar_escenario() {
   rm -rf "$TMP/salida"
   programa "$1" "$2" "$TMP/salida" >"$TMP/pantalla" 2>"$TMP/stderr"
   local codigo=$?
-  [ "$codigo" -eq 0 ] || { echo "código $codigo"; return; }
+  [ "$codigo" -eq 0 ] || { echo "exit $codigo"; return; }
   revisar "$TMP/salida" "$3" "$TMP/pantalla" "$TMP/stderr"
 }
 
@@ -53,7 +56,7 @@ probar_robustez() {
   # shellcheck disable=SC2086  # los argumentos se separan por espacios a propósito
   ( cd "$TMP/caso" && programa $args >"$TMP/pantalla" 2>"$TMP/stderr" )
   codigo=$?
-  [ "$codigo" -eq "$esperado" ] || { echo "código $codigo (se esperaba $esperado)"; return; }
+  [ "$codigo" -eq "$esperado" ] || { echo "exit $codigo (se esperaba $esperado)"; return; }
   if [ "$esperado" -eq 2 ]; then
     [ -s "$TMP/stderr" ] && { echo "escribió en stderr"; return; }
     [ -e "$TMP/caso/salida" ] && { echo "creó la carpeta de salida"; return; }
@@ -77,10 +80,11 @@ casos() {
   done
 }
 
+echo "JVM: $(java -version 2>&1 | head -1)"
 FALLAS=0
 for L in $LENGUAJES; do
   : >"$TMP/res_$L"
-  if [ "$L" != referencia ]; then
+  if [ "$L" != referencia ] && [ "${SIN_CONSTRUIR:-0}" != 1 ]; then
     echo "Construyendo $L..."
     bash "$RAIZ/$L/construir.sh" >"$TMP/construccion_$L" 2>&1 || {
       echo "  no compila (detalle abajo)"; tail -20 "$TMP/construccion_$L"; }
@@ -108,7 +112,7 @@ echo
     echo
   done
 } | awk -F'|' '{ for (i = 1; i <= NF; i++) { c[NR, i] = $i; if (length($i) > w[i]) w[i] = length($i) } n = NF }
-           END { for (r = 1; r <= NR; r++) { for (i = 1; i <= n; i++) printf "%-*s  ", w[i], c[r, i]; print "" } }'
+           END { for (r = 1; r <= NR; r++) { for (i = 1; i <= n; i++) printf ("%-" w[i] "s  "), c[r, i]; print "" } }'
 echo
 if [ "$FALLAS" -eq 0 ]; then echo "RESULTADO: todo coincide"; else echo "RESULTADO: $FALLAS caso(s) con diferencias"; fi
 [ "$FALLAS" -eq 0 ]
