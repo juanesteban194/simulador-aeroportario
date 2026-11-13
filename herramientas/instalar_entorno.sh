@@ -44,7 +44,7 @@ instalar_formula leiningen
 # ---------------------------------------------------------------- 2. Medición
 paso "2. Herramientas de medición (candidatas)"
 [ -x /usr/bin/time ] && ok "/usr/bin/time (tiempo y memoria máxima del proceso)" || falla "falta /usr/bin/time"
-instalar_formula clj-kondo borkdude/brew/clj-kondo
+instalar_formula borkdude/brew/clj-kondo   # no está en homebrew-core; viene del tap oficial del autor
 PYTHON="$HOME/anaconda3/bin/python3"; [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
 if "$PYTHON" -m lizard --version >/dev/null 2>&1; then ok "lizard ya estaba instalado"
 elif "$PYTHON" -m pip install --quiet lizard; then ok "lizard instalado (complejidad de Java y Scala)"
@@ -95,6 +95,7 @@ cat > "$PRUEBA/clojure/project.clj" <<'CLJ'
   :dependencies [[org.clojure/clojure "1.12.0"]]
   :main hola.core
   :aot [hola.core]
+  :target-path "target/%s"
   :uberjar-name "hola.jar")
 CLJ
 cat > "$PRUEBA/clojure/src/hola/core.clj" <<'CLJ'
@@ -108,7 +109,7 @@ CLJ
 paso "Versiones"
 java -version 2>&1 | head -1
 scala-cli version 2>/dev/null | head -2
-lein version 2>/dev/null
+lein version 2>/dev/null; type -a lein | sed "s/^/    /"
 clj-kondo --version 2>/dev/null
 "$PYTHON" -m lizard --version 2>/dev/null | sed 's/^/lizard /'
 
