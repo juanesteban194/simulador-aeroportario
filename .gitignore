@@ -1,0 +1,30 @@
+# Sistema operativo e IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Java
+*.class
+java/out/
+java/build/
+
+# Scala
+.scala-build/
+.bsp/
+.metals/
+.bloop/
+
+# Clojure (Leiningen)
+target/
+.lein-*
+.nrepl-port
+.cpcache/
+.clj-kondo/.cache/
+
+# Python (herramientas del experimento)
+__pycache__/
+.venv/
+
+# Temporales del experimento (los resultados en resultados/ sí se versionan)
+experimento/tmp/
