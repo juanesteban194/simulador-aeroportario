@@ -122,7 +122,7 @@ Se aceptaron las recomendaciones. El detalle está en `02_modelo_y_contrato.md`.
 
 ## Bloque 3 · Diseño del experimento
 
-Se aceptaron las recomendaciones. El detalle está en `03_experimento.md`.
+Se aceptaron las recomendaciones. El detalle está en `03_experimento.md`. Bloque cerrado el 13 de noviembre de 2026.
 
 ### D3.1 · Escenarios
 - **Elegido:** un aeropuerto común (6 pistas, una cerrada) y los escenarios E0, V1 a V4 (1.000 a 1.000.000
