@@ -87,7 +87,7 @@ Se aceptaron las recomendaciones. El documento se revisó y el bloque se cerró 
 
 ## Bloque 2 · Modelo y contrato
 
-Se aceptaron las recomendaciones. El detalle está en `02_modelo_y_contrato.md`.
+Se aceptaron las recomendaciones. El detalle está en `02_modelo_y_contrato.md`. Bloque cerrado el 13 de noviembre de 2026.
 
 ### D2.1 · Archivos de entrada
 - **Elegido:** CSV separado por comas, con encabezado. A cada campo se le hace `trim`, se conservan los campos
