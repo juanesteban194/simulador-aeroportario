@@ -38,7 +38,7 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 | 1 | Requerimientos ([01_requerimientos.md](docs/01_requerimientos.md)) | ✅ |
 | 2 | Modelo y contrato ([02_modelo_y_contrato.md](docs/02_modelo_y_contrato.md)) | ✅ |
 | 3 | Diseño del experimento ([03_experimento.md](docs/03_experimento.md)) | ✅ |
-| 4 | Criterios y clasificación | ⏳ |
+| 4 | Criterios y clasificación ([04_criterios.md](docs/04_criterios.md)) | 🔍 en revisión |
 | 5 | Implementación (Scala → Java → Clojure) | — |
 | 6 | Ejecución y medición | — |
 | 7 | Consolidación y ranking automático | — |
@@ -72,3 +72,4 @@ Las tres versiones se ejecutan sobre **la misma JVM (JDK 21)**, empaquetadas com
 | IntelliJ IDEA + plugin Cursive | Editar los tres lenguajes en un mismo IDE |
 
 **macOS:** `bash herramientas/instalar_entorno.sh` instala y verifica todo. Se puede ejecutar varias veces.
+`bash herramientas/mantener_activo.sh` evita que el Mac se suspenda mientras se trabaja o se mide (caffeinate).

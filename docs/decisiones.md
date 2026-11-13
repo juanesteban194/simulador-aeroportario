@@ -157,3 +157,30 @@ Se aceptaron las recomendaciones. El detalle está en `03_experimento.md`. Bloqu
 - **Elegido:** `experimento/referencia.py` produce las salidas esperadas. No participa en la comparación.
 - **Por qué:** sin ella, si dos versiones difieren no hay forma de saber cuál está mal. Su resultado coincide con
   el ejemplo resuelto a mano del Bloque 2.
+
+## Bloque 4 · Criterios y clasificación
+
+Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`.
+
+### D4.1 · Tiempo, memoria y rendimiento
+- **Elegido:** en cada escenario, puntaje proporcional al mejor (el mejor recibe 100). Luego se promedian los
+  6 escenarios, todos con el mismo peso.
+- **Por qué:** escalar entre el peor y el mejor le da 0 al último aunque esté muy cerca del primero.
+
+### D4.2 · Calidad de código
+- **Elegido:** tamaño (líneas), complejidad (puntos de decisión cada 100 líneas) y duplicación (jscpd), con un
+  tercio cada una. Las advertencias del compilador y del analizador, y SonarQube, se reportan pero no
+  puntúan.
+- **Por qué:** son las únicas métricas que se miden con la misma regla en los tres lenguajes.
+
+### D4.3 · Confiabilidad
+- **Elegido:** el promedio de correctitud (7 escenarios), robustez (12 casos de error) y estabilidad
+  (60 ejecuciones medidas).
+
+### D4.4 · Uso funcional
+- **Elegido:** 50 % restricciones (F1 sin ciclos, F2 sin reasignación, F3 sin colecciones mutables, F4 sin
+  excepciones; una violación anula la regla) y 50 % densidad funcional (operaciones funcionales cada 100 líneas).
+
+### D4.5 · Clasificación
+- **Elegido:** suma con los pesos del profesor; desempate por Tiempo y luego por Memoria. Además, una prueba
+  de solidez: se recalcula con pesos iguales y quitando un criterio a la vez.
