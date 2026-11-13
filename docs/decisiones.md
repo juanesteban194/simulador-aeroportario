@@ -119,3 +119,41 @@ Se aceptaron las recomendaciones. El detalle está en `02_modelo_y_contrato.md`.
 - **Elegido:** tiempos y sumas en enteros de 64 bits; decimales solo al final, con 2 cifras, `HALF_UP` y
   `Locale.ROOT`; horas en formato `D<día> HH:MM`.
 - **Por qué:** el resultado no depende del orden de las sumas ni de la configuración regional del equipo.
+
+## Bloque 3 · Diseño del experimento
+
+Se aceptaron las recomendaciones. El detalle está en `03_experimento.md`.
+
+### D3.1 · Escenarios
+- **Elegido:** un aeropuerto común (6 pistas, una cerrada) y los escenarios E0, V1 a V4 (1.000 a 1.000.000
+  vuelos con la misma carga diaria), C1 (saturado) y X1 (10 % de registros inválidos).
+- **Calibración con la implementación de referencia:**
+  - La primera versión del aeropuerto solo tenía una pista para despegues de pesados, y P01 quedaba al 97 %.
+    Se alargó P03 a 2.900 m.
+  - Se eligieron 1.500 vuelos por día para la carga normal (ocupación media ≈ 60 %, retrasos de
+    aproximadamente 1 minuto).
+  - Se eligieron 2.400 vuelos por día para la congestión (tres pistas al 100 %).
+
+### D3.2 · Generación de datos
+- **Elegido:** generador en Python con semilla fija; solo usa `random.random()`, que es estable entre
+  versiones. Se suben al repo E0, V1 y V2; los demás se regeneran y se verifican con huellas SHA-256.
+
+### D3.3 · Métricas e instrumentos
+- **Tiempo:** `t_operaciones` (validación + simulación + reportes), medido con `System.nanoTime()`.
+- **Rendimiento:** vuelos por segundo del proceso completo, medido con un reloj externo.
+- **Memoria:** memoria residente máxima del proceso, tomada de `rusage` del sistema operativo.
+- Regla de materialización: cada etapa debe terminar su cálculo antes de tomar el tiempo.
+
+### D3.4 · Protocolo
+- **Elegido:** `java -Xmx4g -XX:+UseG1GC -jar` en los tres; cada ejecución es un proceso nuevo.
+  Se hace 1 ronda de calentamiento y 10 medidas, con el orden rotado, y se reporta la mediana.
+  Antes de medir se verifica que la salida sea correcta.
+
+### D3.5 · Registro
+- **Elegido:** una fila por ejecución en `resultados/crudos/<escenario>.csv` y el entorno en
+  `resultados/entorno.txt`.
+
+### D3.6 · Implementación de referencia
+- **Elegido:** `experimento/referencia.py` produce las salidas esperadas. No participa en la comparación.
+- **Por qué:** sin ella, si dos versiones difieren no hay forma de saber cuál está mal. Su resultado coincide con
+  el ejemplo resuelto a mano del Bloque 2.

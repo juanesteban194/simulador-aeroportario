@@ -1,0 +1,59 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 6 | válidos: 6 | inválidos: 0
+Vuelos | registros: 10000 | válidos: 10000 | inválidos: 0
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 10000
+Retraso promedio: 0.96 min
+Retraso máximo: 20 min
+Vuelos retrasados (más de 15 min): 18 (0.18%)
+
+== RF09 · 5 vuelos más retrasados ==
+1. LA0004173 | retraso: 20 min | Despegue | P01
+2. VH0003589 | retraso: 20 min | Despegue | P03
+3. IB0003481 | retraso: 19 min | Despegue | P03
+4. AV0000815 | retraso: 18 min | Despegue | P03
+5. JA0003316 | retraso: 18 min | Despegue | P03
+
+== RF10 · Uso de pistas ==
+Período simulado: D1 00:00 a D8 00:01 (10081 min)
+P01 | Operativa | operaciones: 2993 | ocupada: 9143 min | ocupación: 90.70%
+P02 | Operativa | operaciones: 2042 | ocupada: 6041 min | ocupación: 59.92%
+P03 | Operativa | operaciones: 2379 | ocupada: 7204 min | ocupación: 71.46%
+P04 | Operativa | operaciones: 2266 | ocupada: 6004 min | ocupación: 59.56%
+P05 | Operativa | operaciones: 320 | ocupada: 640 min | ocupación: 6.35%
+P06 | Cerrada | operaciones: 0 | ocupada: 0 min | ocupación: 0.00%
+
+== RF11 · Retraso promedio por aerolínea ==
+Wingo | retraso promedio: 1.20 min | operaciones: 990
+Viva | retraso promedio: 1.16 min | operaciones: 620
+JetSMART | retraso promedio: 1.04 min | operaciones: 1028
+Iberia | retraso promedio: 1.03 min | operaciones: 588
+LATAM | retraso promedio: 1.02 min | operaciones: 2025
+Copa | retraso promedio: 0.86 min | operaciones: 1465
+Avianca | retraso promedio: 0.84 min | operaciones: 2469
+American | retraso promedio: 0.71 min | operaciones: 815
+
+== RF12 · Vuelos no asignables ==
+Ninguno
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 5094
+Despegue: 4906
+Ligero: 2992
+Mediano: 4984
+Pesado: 2024
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 10000
+Vuelos válidos: 10000
+Vuelos inválidos: 0
+Vuelos asignados: 10000
+Vuelos no asignables: 0
+Retraso promedio: 0.96 min
+Vuelos retrasados: 0.18%
+Pista más usada: P01 (operaciones: 2993)
+Aerolínea con mayor retraso promedio: Wingo (1.20 min)

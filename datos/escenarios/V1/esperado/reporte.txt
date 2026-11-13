@@ -1,0 +1,59 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 6 | válidos: 6 | inválidos: 0
+Vuelos | registros: 1000 | válidos: 1000 | inválidos: 0
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 1000
+Retraso promedio: 0.20 min
+Retraso máximo: 6 min
+Vuelos retrasados (más de 15 min): 0 (0.00%)
+
+== RF09 · 5 vuelos más retrasados ==
+1. AV0000777 | retraso: 6 min | Despegue | P01
+2. AV0000078 | retraso: 4 min | Despegue | P03
+3. AV0000315 | retraso: 4 min | Despegue | P03
+4. JA0000866 | retraso: 4 min | Despegue | P03
+5. AV0000794 | retraso: 3 min | Despegue | P03
+
+== RF10 · Uso de pistas ==
+Período simulado: D1 00:00 a D1 23:59 (1439 min)
+P01 | Operativa | operaciones: 382 | ocupada: 1114 min | ocupación: 77.41%
+P02 | Operativa | operaciones: 202 | ocupada: 589 min | ocupación: 40.93%
+P03 | Operativa | operaciones: 237 | ocupada: 706 min | ocupación: 49.06%
+P04 | Operativa | operaciones: 165 | ocupada: 439 min | ocupación: 30.51%
+P05 | Operativa | operaciones: 14 | ocupada: 28 min | ocupación: 1.95%
+P06 | Cerrada | operaciones: 0 | ocupada: 0 min | ocupación: 0.00%
+
+== RF11 · Retraso promedio por aerolínea ==
+Viva | retraso promedio: 0.38 min | operaciones: 52
+Iberia | retraso promedio: 0.25 min | operaciones: 57
+Copa | retraso promedio: 0.24 min | operaciones: 153
+JetSMART | retraso promedio: 0.21 min | operaciones: 108
+Avianca | retraso promedio: 0.19 min | operaciones: 267
+Wingo | retraso promedio: 0.17 min | operaciones: 107
+LATAM | retraso promedio: 0.16 min | operaciones: 192
+American | retraso promedio: 0.11 min | operaciones: 64
+
+== RF12 · Vuelos no asignables ==
+Ninguno
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 475
+Despegue: 525
+Ligero: 311
+Mediano: 502
+Pesado: 187
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 1000
+Vuelos válidos: 1000
+Vuelos inválidos: 0
+Vuelos asignados: 1000
+Vuelos no asignables: 0
+Retraso promedio: 0.20 min
+Vuelos retrasados: 0.00%
+Pista más usada: P01 (operaciones: 382)
+Aerolínea con mayor retraso promedio: Viva (0.38 min)

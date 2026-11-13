@@ -28,3 +28,9 @@ __pycache__/
 
 # Temporales del experimento (los resultados en resultados/ sí se versionan)
 experimento/tmp/
+
+# Escenarios grandes: se regeneran con datos/generador.py y se verifican con datos/escenarios/huellas.sha256
+datos/escenarios/V3/
+datos/escenarios/V4/
+datos/escenarios/C1/
+datos/escenarios/X1/
