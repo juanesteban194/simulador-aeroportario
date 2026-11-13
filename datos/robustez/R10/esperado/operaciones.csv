@@ -1,0 +1,3 @@
+codigo,aerolinea,operacion,categoria,prioridad,pista,programada,inicio,fin,retraso
+AV5,Avianca,Despegue,Ligero,Normal,P06,D1 08:00,D1 08:00,D1 08:02,0
+AV7,Avianca,Despegue,Ligero,Normal,P06,D9999 23:59,D9999 23:59,D10000 00:01,0

@@ -184,3 +184,63 @@ Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`. Bloque 
 ### D4.5 · Clasificación
 - **Elegido:** suma con los pesos del profesor; desempate por Tiempo y luego por Memoria. Además, una prueba
   de solidez: se recalcula con pesos iguales y quitando un criterio a la vez.
+
+## Bloque 5 · Implementación
+
+Se aceptaron las recomendaciones. Bloque en curso: la versión Java está terminada y verificada.
+
+### D5.1 · Orden de implementación
+- **Elegido:** Java → Scala → Clojure (antes: Scala → Java → Clojure).
+- **Por qué:** Java solo necesita el JDK, así que se puede compilar y verificar contra todos los casos
+  mientras se escribe. Scala y Clojure descargan sus dependencias de Maven Central, y eso solo es posible
+  en el Mac. Java queda como versión de referencia para traducir las otras dos.
+
+### D5.2 · Estructura común
+- **Elegido:** los mismos 7 módulos, con los mismos nombres de funciones, en los tres lenguajes:
+  1. Modelo: entidades (Avión, Vuelo, Pista, Aeropuerto) y tipos de resultado.
+  2. Lectura: archivo → líneas → registros.
+  3. Validación (RF03).
+  4. TorreControl: asignación de pistas y simulación (RF04 a RF06).
+  5. Reportes (RF07 a RF14).
+  6. Medición: tiempo por etapa y opción `--medir`.
+  7. Main: argumentos y encadenamiento de las 5 etapas.
+- **Por qué:** permite comparar el código módulo por módulo y que cada integrante explique cualquier versión.
+
+### D5.3 · Algoritmo funcional
+- **Elegido:** el mismo algoritmo en los tres:
+  - **Estado inmutable.** Cada minuto produce un `Aeropuerto` nuevo:
+    `iterate(paso) → takeWhile(no terminado) → flatMap(operaciones asignadas)`.
+  - **Asignación en un minuto.** Por recursión, con profundidad máxima igual al número de pistas.
+  - **Unicidad sin estado.** El dueño de cada código es el primer registro sin otros errores (agrupar y
+    tomar el mínimo). Da el mismo resultado que validar línea por línea.
+- **Por qué:** cumple F1 a F4 sin ciclos ni variables, y la complejidad es la misma en los tres lenguajes.
+
+### D5.4 · Estilo
+- **Elegido:**
+  - Reglas F1 a F4 del Bloque 4.
+  - `throws` solo en las funciones que leen o escriben archivos; los errores de datos se manejan como
+    valores (`Ok` / `Falla`).
+  - Nombres y comentarios en español; cada módulo empieza con un encabezado que dice qué hace.
+
+### D5.5 · Pruebas
+- **Elegido:** `experimento/verificar.sh` construye cada versión y compara byte a byte sus 3 archivos y lo
+  que muestra en pantalla con lo esperado. Revisa:
+  - el ejemplo E0;
+  - los escenarios que tengan salida esperada (V1 y V2 en el repo; V3, V4, C1 y X1 al regenerarlos);
+  - los 12 casos de robustez de `datos/robustez` (código de salida, archivos y stderr vacío).
+- **Resultado Java:** coincide en los 19 casos, incluido V4 (1.000.000 de vuelos).
+
+### D5.6 · Precisiones del contrato
+Al escribir la primera versión aparecieron detalles que el contrato no fijaba y en los que los lenguajes
+podían diferir. Quedan definidos en `02_modelo_y_contrato.md`:
+- decimales con aritmética entera exacta y redondeo HALF_UP, sin punto flotante;
+- `trim` de la JVM (quita los caracteres con código ≤ U+0020);
+- bytes UTF-8 inválidos → U+FFFD, sin error;
+- orden de textos por unidades UTF-16 (`compareTo` de Java);
+- error de uso: línea `ERROR: <motivo>`, línea de uso y código 2, sin escribir archivos.
+
+La implementación de referencia se actualizó con estas reglas; sus salidas esperadas no cambiaron.
+
+### D5.7 · Reparto para la sustentación (propuesto)
+- Sebastián Villa: Java · Juan Esteban Echavarría: Scala · Miguel Guarnizo: Clojure.
+- Cada uno explica su versión y debe poder explicar las otras dos con la guía del Bloque 8.

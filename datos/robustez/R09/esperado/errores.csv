@@ -1,0 +1,8 @@
+archivo,linea,motivo
+pistas,2,se esperaban 4 campos y hay 5
+pistas,3,se esperaban 4 campos y hay 3
+pistas,4,se esperaban 4 campos y hay 5
+pistas,5,se esperaban 4 campos y hay 1
+vuelos,2,se esperaban 8 campos y hay 9
+vuelos,3,se esperaban 8 campos y hay 7
+vuelos,5,código vacío

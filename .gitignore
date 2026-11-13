@@ -34,3 +34,7 @@ datos/escenarios/V3/
 datos/escenarios/V4/
 datos/escenarios/C1/
 datos/escenarios/X1/
+
+# Ejecutables construidos (se generan con <lenguaje>/construir.sh)
+*.jar
+java/clases/

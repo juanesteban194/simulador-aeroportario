@@ -1,0 +1,5 @@
+codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad
+ÑA1,Aerolíneas Ñandú,HK-ÑÁÉ,Ligero,Despegue,1,08:00,Normal
+AV2,Avianca,HK-Ü,Mediano,Despegue,1,08:00,Emergencia
+ÁB3,Ágil Aérea,HK-3,Ligero,Despegue,1,08:01,Normal
+VV4,Vuelos � Raros,HK-4,Ligero,Despegue,1,08:02,Normal

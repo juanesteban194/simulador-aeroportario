@@ -1,0 +1,14 @@
+codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad
+AV101,Avianca,HK5021,Mediano,Aterrizaje,1,08:00,Normal
+LA202,LATAM,CC-BAW,Mediano,Despegue,1,08:00,Normal
+AV103,Avianca,HK5100,Ligero,Aterrizaje,1,08:01,Normal
+CM304,Copa,HP1825,Mediano,Aterrizaje,1,08:01,Emergencia
+AV105,Avianca,HK5022,Mediano,Despegue,1,08:02,Normal
+LA206,LATAM,CC-BAX,Ligero,Despegue,1,08:02,Normal
+CM307,Copa,HP1830,Mediano,Aterrizaje,1,08:03,Normal
+AV108,Avianca,HK5300,Pesado,Aterrizaje,1,08:05,Normal
+LA209,LATAM,CC-BAY,Mediano,Despegue,1,08:04,Normal
+CM310,Copa,HP1840,Jumbo,Despegue,1,08:05,Normal
+AV101,Avianca,HK5023,Ligero,Despegue,1,08:06,Normal
+AV112,Avianca,HK5024,Ligero,Despegue,1,8:10,Normal
+LA213,LATAM,CC-BAZ,Ligero,Aterrizaje,1,08:20,Normal

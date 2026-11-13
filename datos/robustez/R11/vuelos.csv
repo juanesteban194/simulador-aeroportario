@@ -1,0 +1,8 @@
+codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad
+AV1,Avianca,HK1,Ligero,Despegue,1,00:00,Normal
+AV2,Avianca,HK2,Ligero,Despegue,1,23:59,Normal
+AV3,Avianca,HK3,Ligero,Despegue,1,24:00,Normal
+AV4,Avianca,HK4,Ligero,Despegue,1,8:5,Normal
+AV5,Avianca,HK5,Ligero,Despegue,1,12:60,Normal
+AV6,Avianca,HK6,Ligero,Despegue,1,aa:bb,Normal
+AV7,Avianca,HK7,Ligero,Despegue,1,123:00,Normal

@@ -1,0 +1,3 @@
+descripcion: Líneas en blanco y espacios alrededor de los campos
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

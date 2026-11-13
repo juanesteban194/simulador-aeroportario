@@ -147,7 +147,7 @@ duraciones en nanosegundos:
 lectura_ns,validacion_ns,simulacion_ns,reportes_ns,escritura_ns
 12804511,40211876,95530112,30876220,18221034
 ```
-Sin esta opción, el programa no mide nada y se comporta igual.
+Sin esta opción, el programa no escribe ninguna medición y su salida es la misma.
 
 ## 6. Protocolo de ejecución
 

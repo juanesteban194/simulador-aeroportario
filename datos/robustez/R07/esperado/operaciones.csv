@@ -1,0 +1,3 @@
+codigo,aerolinea,operacion,categoria,prioridad,pista,programada,inicio,fin,retraso
+LA2,LATAM,Aterrizaje,Mediano,Emergencia,P01,D1 08:00,D1 08:00,D1 08:03,0
+AV1,Avianca,Despegue,Ligero,Normal,P02,D1 08:00,D1 08:00,D1 08:02,0

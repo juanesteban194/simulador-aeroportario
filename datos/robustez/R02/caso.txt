@@ -1,0 +1,3 @@
+descripcion: El archivo de pistas no existe
+argumentos: no_existe.csv vuelos.csv salida
+codigo: 2

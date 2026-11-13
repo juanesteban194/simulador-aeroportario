@@ -1,0 +1,5 @@
+archivo,linea,motivo
+pistas,6,longitud no es un entero: abc
+vuelos,11,categoría con valor no válido: Jumbo (valores: Ligero/Mediano/Pesado)
+vuelos,12,código repetido: AV101
+vuelos,13,hora no válida: 8:10 (formato HH:MM de 00:00 a 23:59)

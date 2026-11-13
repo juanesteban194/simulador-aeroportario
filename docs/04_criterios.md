@@ -130,7 +130,7 @@ anula la regla.** Comentarios y textos se excluyen igual que en la sección 3.
 | **F1 · Sin ciclos** | `for`, `while`, `do` | `for`, `while`, `do` | `loop`, `doseq`, `dotimes`, `while`, `for` |
 | **F2 · Sin reasignación** | `++`, `--`, `+=`, `-=`, `*=`, `/=`, `%=`; una línea que empieza con `variable = …` sin tipo delante | `var` | `atom`, `swap!`, `reset!`, `set!`, `ref`, `alter`, `volatile!`, `vswap!` |
 | **F3 · Sin colecciones mutables** | `new ArrayList`, `new LinkedList`, `new HashMap`, `new TreeMap`, `new HashSet`, `new ArrayDeque`, `new PriorityQueue`, `StringBuilder`, `.add(`, `.put(`, `.remove(`, `.set(`, `.clear(`, `.append(`, asignar a una posición de un arreglo | `scala.collection.mutable`, `ArrayBuffer`, `ListBuffer`, `StringBuilder`, `Array(`, `.update(` | `transient`, `conj!`, `assoc!`, `java.util.ArrayList`, `java.util.HashMap`, `StringBuilder`, `aset` |
-| **F4 · Sin excepciones** | `try`, `catch`, `throw` (se permite `throws` en la firma de `main`) | `try`, `catch`, `throw`, `Try(` | `try`, `catch`, `throw`, `ex-info` |
+| **F4 · Sin excepciones** | `try`, `catch`, `throw`. Se permite `throws` en las firmas de lectura y escritura de archivos: es una declaración que exige Java, no un manejo de excepciones | `try`, `catch`, `throw`, `Try(` | `try`, `catch`, `throw`, `ex-info` |
 
 **Mitad B · Densidad funcional (50 %, proporcional al mejor).** Es el número de operaciones funcionales cada
 100 líneas de código. Mide cuánto del código es estilo funcional y cuánto es código que el lenguaje obliga a

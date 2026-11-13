@@ -39,7 +39,7 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 | 2 | Modelo y contrato ([02_modelo_y_contrato.md](docs/02_modelo_y_contrato.md)) | ✅ |
 | 3 | Diseño del experimento ([03_experimento.md](docs/03_experimento.md)) | ✅ |
 | 4 | Criterios y clasificación ([04_criterios.md](docs/04_criterios.md)) | ✅ |
-| 5 | Implementación (Scala → Java → Clojure) | ⏳ |
+| 5 | Implementación (Java ✅ → Scala → Clojure) · verificación: `bash experimento/verificar.sh` | ⏳ |
 | 6 | Ejecución y medición | — |
 | 7 | Consolidación y ranking automático | — |
 | 8 | Informe técnico y sustentación | — |

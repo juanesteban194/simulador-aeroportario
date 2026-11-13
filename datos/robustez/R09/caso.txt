@@ -1,0 +1,3 @@
+descripcion: Campos de más, de menos y una coma final
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

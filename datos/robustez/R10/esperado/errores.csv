@@ -1,0 +1,10 @@
+archivo,linea,motivo
+pistas,2,longitud no es un entero: 1234567890
+pistas,3,longitud debe ser mayor que 0: -100
+pistas,4,longitud debe ser mayor que 0: 0
+pistas,5,longitud no es un entero: +5
+vuelos,2,día debe estar entre 1 y 9999: 0
+vuelos,3,día debe estar entre 1 y 9999: 10000
+vuelos,4,día debe estar entre 1 y 9999: -1
+vuelos,5,día no es un entero: +1
+vuelos,7,día no es un entero: 1234567890

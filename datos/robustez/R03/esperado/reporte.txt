@@ -1,0 +1,42 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 6 | válidos: 6 | inválidos: 0
+Vuelos | registros: 0 | válidos: 0 | inválidos: 0
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 0
+Retraso promedio: Sin datos
+Retraso máximo: Sin datos
+Vuelos retrasados (más de 15 min): Sin datos
+
+== RF09 · 5 vuelos más retrasados ==
+Sin datos
+
+== RF10 · Uso de pistas ==
+Sin datos
+
+== RF11 · Retraso promedio por aerolínea ==
+Sin datos
+
+== RF12 · Vuelos no asignables ==
+Ninguno
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 0
+Despegue: 0
+Ligero: 0
+Mediano: 0
+Pesado: 0
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 0
+Vuelos válidos: 0
+Vuelos inválidos: 0
+Vuelos asignados: 0
+Vuelos no asignables: 0
+Retraso promedio: Sin datos
+Vuelos retrasados: Sin datos
+Pista más usada: Sin datos
+Aerolínea con mayor retraso promedio: Sin datos

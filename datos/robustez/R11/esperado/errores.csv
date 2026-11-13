@@ -1,0 +1,6 @@
+archivo,linea,motivo
+vuelos,4,hora no válida: 24:00 (formato HH:MM de 00:00 a 23:59)
+vuelos,5,hora no válida: 8:5 (formato HH:MM de 00:00 a 23:59)
+vuelos,6,hora no válida: 12:60 (formato HH:MM de 00:00 a 23:59)
+vuelos,7,hora no válida: aa:bb (formato HH:MM de 00:00 a 23:59)
+vuelos,8,hora no válida: 123:00 (formato HH:MM de 00:00 a 23:59)

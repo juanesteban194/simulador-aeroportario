@@ -1,0 +1,3 @@
+descripcion: Finales de línea de Windows (\r\n)
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

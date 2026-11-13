@@ -1,0 +1,3 @@
+descripcion: Todos los vuelos son inválidos
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

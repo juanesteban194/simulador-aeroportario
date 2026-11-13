@@ -1,0 +1,3 @@
+descripcion: Archivo de vuelos vacío (0 bytes, sin encabezado)
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

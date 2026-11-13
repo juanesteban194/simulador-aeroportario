@@ -1,0 +1,3 @@
+descripcion: Los dos archivos tienen solo el encabezado
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0

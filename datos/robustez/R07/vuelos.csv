@@ -1,0 +1,7 @@
+codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad
+
+ AV1 ,  Avianca , HK1 ,Ligero, Despegue ,1, 08:00 ,Normal 
+
+  
+LA2,LATAM,CC2,Mediano,Aterrizaje,1,08:00,Emergencia
+ 	 

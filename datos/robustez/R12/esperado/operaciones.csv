@@ -1,0 +1,5 @@
+codigo,aerolinea,operacion,categoria,prioridad,pista,programada,inicio,fin,retraso
+AV2,Avianca,Despegue,Mediano,Emergencia,PA2,D1 08:00,D1 08:00,D1 08:03,0
+ÑA1,Aerolíneas Ñandú,Despegue,Ligero,Normal,PÑ1,D1 08:00,D1 08:00,D1 08:02,0
+ÁB3,Ágil Aérea,Despegue,Ligero,Normal,PÑ1,D1 08:01,D1 08:02,D1 08:04,1
+VV4,Vuelos � Raros,Despegue,Ligero,Normal,PA2,D1 08:02,D1 08:03,D1 08:05,1

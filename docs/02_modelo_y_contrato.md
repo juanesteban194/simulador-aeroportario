@@ -9,13 +9,15 @@ aquí es libre en cada lenguaje.
 ## 1. Ejecución
 
 ```
-java -jar simulador-<lenguaje>.jar <pistas.csv> <vuelos.csv> <carpeta_salida>
+java -jar simulador-<lenguaje>.jar <pistas.csv> <vuelos.csv> <carpeta_salida> [--medir <archivo>]
 ```
+
+`--medir <archivo>` es opcional y se define en el Bloque 3. Cualquier otra combinación de argumentos es un error de uso.
 
 | Situación | Comportamiento | Código de salida |
 |---|---|---|
 | Ejecución normal, aunque haya registros inválidos | Escribe los 3 archivos de salida y muestra `reporte.txt` en pantalla | 0 |
-| Faltan argumentos, o un archivo de entrada no existe o no se puede leer | Muestra `ERROR: <motivo>` y el modo de uso. No escribe nada | 2 |
+| Argumentos incorrectos, o un archivo de entrada no existe o no se puede leer | Muestra una línea `ERROR: <motivo>` y otra con el modo de uso. No escribe ningún archivo | 2 |
 
 Archivos que escribe en `<carpeta_salida>` (la crea si no existe):
 
@@ -28,12 +30,15 @@ Archivos que escribe en `<carpeta_salida>` (la crea si no existe):
 ## 2. Archivos de entrada
 
 **Reglas comunes**
-1. Codificación UTF-8. Las líneas terminan en `\n` (también se acepta `\r\n`).
+1. Codificación UTF-8. Un byte inválido no detiene el programa: se reemplaza por el carácter `�` (U+FFFD).
+   Las líneas terminan en `\n`; también se acepta `\r\n`, porque el `\r` desaparece con el `trim`.
 2. La **línea 1 es el encabezado** y no se valida.
-3. Las líneas vacías o con solo espacios **se ignoran** y no cuentan como registro.
+3. Las líneas que quedan vacías después del `trim` **se ignoran** y no cuentan como registro.
 4. Cada registro se separa por comas **conservando los campos vacíos**, incluidos los del final:
    `a,b,` tiene 3 campos. En Java y Scala se usa `split(",", -1)`.
-5. A cada campo se le quitan los espacios de los extremos (`trim`).
+5. A cada campo se le hace `trim`, con la definición de la JVM (`String.trim()`): se quitan de los extremos
+   los caracteres con código menor o igual a U+0020 (espacio, tabulador, `\r`…). En Clojure se usa `(.trim s)`
+   en lugar de `clojure.string/trim`, porque este último usa otra definición de espacio.
 6. Los valores de la lista cerrada deben coincidir **exactamente**, con mayúsculas y minúsculas: `Mixta` es
    válido y `mixta` no.
 7. El número de línea que se reporta es la **línea física del archivo** (el encabezado es la línea 1).
@@ -169,12 +174,16 @@ porque Java no optimiza la recursión de cola.
 ## 6. Archivos de salida
 
 **Formato de números y horas (RNF07)**
-- Decimales con **punto** y **2 cifras**, redondeo `HALF_UP`. En los tres lenguajes se usa el formateador de
-  Java con `Locale.ROOT`.
+- Decimales con **punto** y **2 cifras**. Se calculan con **aritmética entera exacta**, no con números de
+  punto flotante. Para mostrar el cociente `a / b` se calcula `c = (200·a + b) div (2·b)`: son las centésimas
+  redondeadas `HALF_UP`. Luego se escribe `c div 100`, un punto y `c mod 100` con 2 dígitos. Así no se depende
+  del formateador de cada lenguaje ni de la configuración regional.
 - Horas como `D<día> HH:MM`. Ejemplo: el minuto 1.935 se escribe `D2 08:15`.
 - Retrasos y ocupaciones en minutos enteros.
-- Promedios: la suma entera dividida entre la cantidad, calculada una sola vez como número decimal.
-- Ordenamiento de texto: comparación de cadenas estándar de la JVM (`compareTo`), la misma en los tres.
+- Promedios y porcentajes: `promedio = suma / cantidad` y `porcentaje = 100·parte / total`, con la regla anterior.
+  Los ordenamientos por promedio (RF11) comparan fracciones exactas: `a/b > c/d` si `a·d > c·b`.
+- Ordenamiento de texto: comparación de cadenas estándar de la JVM (`compareTo`, por unidades UTF-16), la
+  misma en los tres.
 
 **`operaciones.csv`** (RF07), en orden de asignación: por minuto de inicio y, dentro del mismo minuto, en el
 orden de prioridad en que se asignaron.

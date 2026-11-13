@@ -1,0 +1,45 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 6 | válidos: 2 | inválidos: 4
+Vuelos | registros: 7 | válidos: 2 | inválidos: 5
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 2
+Retraso promedio: 0.00 min
+Retraso máximo: 0 min
+Vuelos retrasados (más de 15 min): 0 (0.00%)
+
+== RF09 · 5 vuelos más retrasados ==
+1. AV5 | retraso: 0 min | Despegue | P06
+2. AV7 | retraso: 0 min | Despegue | P06
+
+== RF10 · Uso de pistas ==
+Período simulado: D1 08:00 a D10000 00:01 (14398081 min)
+P05 | Operativa | operaciones: 0 | ocupada: 0 min | ocupación: 0.00%
+P06 | Operativa | operaciones: 2 | ocupada: 4 min | ocupación: 0.00%
+
+== RF11 · Retraso promedio por aerolínea ==
+Avianca | retraso promedio: 0.00 min | operaciones: 2
+
+== RF12 · Vuelos no asignables ==
+Ninguno
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 0
+Despegue: 2
+Ligero: 2
+Mediano: 0
+Pesado: 0
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 7
+Vuelos válidos: 2
+Vuelos inválidos: 5
+Vuelos asignados: 2
+Vuelos no asignables: 0
+Retraso promedio: 0.00 min
+Vuelos retrasados: 0.00%
+Pista más usada: P06 (operaciones: 2)
+Aerolínea con mayor retraso promedio: Avianca (0.00 min)

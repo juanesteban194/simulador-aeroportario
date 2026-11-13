@@ -1,0 +1,50 @@
+SIMULADOR DE OPERACIONES AEROPORTUARIAS · REPORTE
+
+== RF03 · Validación de datos ==
+Pistas | registros: 2 | válidos: 2 | inválidos: 0
+Vuelos | registros: 4 | válidos: 4 | inválidos: 0
+Detalle de los registros inválidos: errores.csv
+
+== RF08 · Resumen de retrasos ==
+Operaciones asignadas: 4
+Retraso promedio: 0.50 min
+Retraso máximo: 1 min
+Vuelos retrasados (más de 15 min): 0 (0.00%)
+
+== RF09 · 5 vuelos más retrasados ==
+1. VV4 | retraso: 1 min | Despegue | PA2
+2. ÁB3 | retraso: 1 min | Despegue | PÑ1
+3. AV2 | retraso: 0 min | Despegue | PA2
+4. ÑA1 | retraso: 0 min | Despegue | PÑ1
+
+== RF10 · Uso de pistas ==
+Período simulado: D1 08:00 a D1 08:05 (5 min)
+PA2 | Operativa | operaciones: 2 | ocupada: 5 min | ocupación: 100.00%
+PÑ1 | Operativa | operaciones: 2 | ocupada: 4 min | ocupación: 80.00%
+
+== RF11 · Retraso promedio por aerolínea ==
+Vuelos � Raros | retraso promedio: 1.00 min | operaciones: 1
+Ágil Aérea | retraso promedio: 1.00 min | operaciones: 1
+Aerolíneas Ñandú | retraso promedio: 0.00 min | operaciones: 1
+Avianca | retraso promedio: 0.00 min | operaciones: 1
+
+== RF12 · Vuelos no asignables ==
+Ninguno
+
+== RF13 · Operaciones por tipo y categoría ==
+Aterrizaje: 0
+Despegue: 4
+Ligero: 3
+Mediano: 1
+Pesado: 0
+
+== RF14 · Resumen ejecutivo ==
+Vuelos cargados: 4
+Vuelos válidos: 4
+Vuelos inválidos: 0
+Vuelos asignados: 4
+Vuelos no asignables: 0
+Retraso promedio: 0.50 min
+Vuelos retrasados: 0.00%
+Pista más usada: PA2 (operaciones: 2)
+Aerolínea con mayor retraso promedio: Vuelos � Raros (1.00 min)

@@ -1,0 +1,7 @@
+archivo,linea,motivo
+vuelos,2,categoría con valor no válido: Gigante (valores: Ligero/Mediano/Pesado)
+vuelos,3,aerolínea vacía
+vuelos,4,operación con valor no válido: Vuelo (valores: Despegue/Aterrizaje)
+vuelos,5,código vacío
+vuelos,6,prioridad con valor no válido: Alta (valores: Normal/Emergencia)
+vuelos,7,se esperaban 8 campos y hay 6

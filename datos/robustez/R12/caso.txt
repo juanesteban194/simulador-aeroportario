@@ -1,0 +1,3 @@
+descripcion: Tildes, ñ y un byte UTF-8 inválido
+argumentos: pistas.csv vuelos.csv salida
+codigo: 0
