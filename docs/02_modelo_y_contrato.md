@@ -75,8 +75,9 @@ Archivos que escribe en `<carpeta_salida>` (la crea si no existe):
 
 - Cada registro se valida **en el orden de las columnas**, y solo se reporta **el primer error**.
 - La unicidad (`id`, `codigo`) se comprueba contra los registros **válidos anteriores**: un registro inválido
-  no reserva su código. Por eso la validación es una reducción (`fold`/`reduce`) que lleva el conjunto de
-  códigos válidos.
+  no reserva su código. Las tres versiones lo resuelven sin estado (D5.3): el "dueño" de cada código es el
+  primer registro sin otros errores (agrupar por código y tomar la línea mínima), y un registro posterior con
+  el mismo código está repetido. Da el mismo resultado que recorrer el archivo llevando los códigos válidos.
 - Primero se valida todo `pistas.csv` y después `vuelos.csv`.
 
 **Mensajes exactos** (`<valor>` es el texto del campo después de `trim`):
@@ -107,19 +108,19 @@ traer comas, porque el registro ya se separó por ellas.
 | Avión | `record Avion(String matricula, Categoria categoria)` | `case class Avion(matricula: String, categoria: Categoria)` | `(defrecord Avion [matricula categoria])` |
 | Vuelo | `record Vuelo(String codigo, String aerolinea, Avion avion, Operacion operacion, long programado, Prioridad prioridad)` | `case class Vuelo(...)` con los mismos campos | `(defrecord Vuelo [codigo aerolinea avion operacion programado prioridad])` |
 | Pista | `record Pista(String id, int longitud, Uso uso, Estado estado)` | `case class Pista(...)` | `(defrecord Pista [id longitud uso estado])` |
-| Operación asignada | `record OperacionAsignada(Vuelo vuelo, String pista, long inicio, long fin)` (el retraso se calcula: `inicio − programado`) | `case class OperacionAsignada(...)` | `(defrecord OperacionAsignada [vuelo pista inicio fin])` |
-| Aeropuerto (estado de la simulación) | `record Aeropuerto(long minuto, List<Integer> cabezas, List<Long> libres, List<OperacionAsignada> asignadasEnElPaso)` | `case class Aeropuerto(...)` | mapa `{:minuto … :cabezas … :libres … :asignadas …}` |
-| Listas cerradas | `enum Categoria`, `enum Operacion`, `enum Uso`, `enum Estado`, `enum Prioridad` | `enum` de Scala 3 | palabras clave: `:ligero`, `:aterrizaje`… |
-| Resultado de validar | `sealed interface Resultado<T>` con `record Ok<T>(T valor)` y `record Error<T>(String motivo)` | `Either[String, T]` | `{:ok valor}` o `{:error motivo}` |
-| TorreControl | clase `final` con métodos `static` puros | `object TorreControl` | espacio de nombres `torre` |
+| Operación asignada | `record OperacionAsignada(Vuelo vuelo, Pista pista, long inicio, long fin)` (el retraso se calcula: `inicio − programado`) | `case class OperacionAsignada(...)` con `def retraso` | `(defrecord OperacionAsignada [vuelo pista inicio fin])` y la función `retraso` |
+| Aeropuerto (estado de la simulación) | `record Aeropuerto(long minuto, List<Integer> cabezas, List<Long> libres, List<OperacionAsignada> asignadasEnElPaso)` | `case class Aeropuerto(...)` con `Vector` | `(defrecord Aeropuerto [minuto cabezas libres asignadas-en-el-paso])` con vectores |
+| Listas cerradas | `enum Categoria`, `enum Operacion`, `enum Uso`, `enum Estado`, `enum Prioridad` | `enum` de Scala 3 | palabras clave con el texto del contrato: `:Ligero`, `:Aterrizaje`… |
+| Resultado de validar | `sealed interface Resultado<T>` con `record Ok<T>(T valor)` y `record Falla<T>(ErrorRegistro error)` | `Either[ErrorRegistro, T]` | `{:ok valor}` o `{:falla error}` |
+| TorreControl | clase `final` con métodos `static` puros | `object TorreControl` | espacio de nombres `simulador.torre-control` |
 
-**Módulos** (los mismos en los tres; el de Medición se agrega en el Bloque 3):
+**Módulos** (los mismos en los tres; el de Medición se agrega en el Bloque 3 y queda como módulo 6):
 
 | Módulo | Responsabilidad | Operaciones funcionales principales |
 |---|---|---|
 | Modelo | Entidades, listas cerradas y requisitos por categoría (RN02) | — |
 | Lectura | Leer archivos y convertir cada línea en campos | `map`, `filter`, `split` |
-| Validación | Reglas de la sección 3; separar válidos de errores | `reduce`/`fold`, Resultado/`Either` |
+| Validación | Reglas de la sección 3; separar válidos de errores | `groupBy` + mínimo (unicidad), cadenas de `Optional.or`/`orElse`/`or`, Resultado/`Either` |
 | TorreControl | Compatibilidad (RN03), no asignables (RN09) y simulación (sección 5) | `filter`, `groupBy`, `sortBy`, `iterate`, `takeWhile`, `flatMap`, `min` |
 | Reportes | RF07 a RF14 y formato de salida | `groupBy`, `map`, `reduce`, `sortBy`, `take` |
 | Main | Leer los argumentos, encadenar los módulos y escribir los archivos | composición de funciones |
@@ -164,12 +165,13 @@ operaciones de cada paso:
 
 | Java | Scala | Clojure |
 |---|---|---|
-| `Stream.iterate(inicial, a -> !a.terminado(), TorreControl::paso).flatMap(a -> a.asignadasEnElPaso().stream()).toList()` | `Iterator.iterate(inicial)(paso).takeWhile(!_.terminado).flatMap(_.asignadasEnElPaso).toList` | `(->> (iterate paso inicial) (take-while (complement terminado?)) (mapcat :asignadas) vec)` |
+| `Stream.iterate(inicial, a -> !terminado(a, filas), a -> paso(a, filas, operativas)).flatMap(a -> a.asignadasEnElPaso().stream()).toList()` | `Iterator.iterate(inicial)(a => paso(a, todas, operativas)).takeWhile(a => !terminado(a, todas)).flatMap(_.asignadasEnElPaso).toVector` | `(into [] (comp (take-while #(not (terminado? % filas))) (mapcat :asignadas-en-el-paso)) (iterate #(paso % filas operativas) inicial))` |
 
 **Costo:** se ordena una vez (proporcional a n·log n). Después cada paso cuesta lo mismo sin importar cuántos
 vuelos haya (12 filas y k pistas), y hay como máximo 2 eventos por vuelo. Ningún lenguaje necesita
-colecciones especiales: solo listas inmutables y enteros. **No hay recursión profunda**, lo que importa
-porque Java no optimiza la recursión de cola.
+colecciones especiales: solo listas inmutables y enteros. **No hay recursión profunda**: dentro de un minuto la
+asignación es recursiva, pero con profundidad máxima igual al número de pistas; eso importa porque Java no
+optimiza la recursión de cola (Scala usa `@tailrec` y Clojure `recur`).
 
 ## 6. Archivos de salida
 

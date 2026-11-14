@@ -25,6 +25,7 @@ import datetime
 import hashlib
 import os
 import platform
+import resource
 import shutil
 import statistics
 import subprocess
@@ -83,14 +84,23 @@ def cambios_sin_guardar(env):
     return bool(estado.strip())
 
 
+# El orquestador lee los archivos por partes, sin cargarlos enteros: en Linux, la memoria máxima que informa
+# wait4 para un proceso hijo parte de la memoria que tenía el orquestador al crearlo. Si el orquestador ocupara
+# mucho, inflaría la medición de los tres lenguajes.
+
 def sha256(ruta):
-    return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()
+    resumen = hashlib.sha256()
+    with open(ruta, "rb") as f:
+        for bloque in iter(lambda: f.read(1 << 20), b""):
+            resumen.update(bloque)
+    return resumen.hexdigest()
 
 
 def contar_vuelos(ruta):
     """Registros del archivo de vuelos: líneas no vacías sin el encabezado (mismo criterio que el contrato)."""
     espacios = bytes(range(33))   # trim de la JVM: caracteres <= U+0020
-    return sum(1 for linea in Path(ruta).read_bytes().split(b"\n")[1:] if linea.strip(espacios))
+    with open(ruta, "rb") as f:
+        return sum(1 for numero, linea in enumerate(f) if numero > 0 and linea.strip(espacios))
 
 
 def memoria_mb(rusage):
@@ -165,9 +175,12 @@ def registrar_entorno(env, carpeta, args):
         f"Scala: {scala} (project.scala) | {' | '.join(comando(['scala-cli', 'version'], env).splitlines())}",
         f"Clojure: {clojure} (project.clj) | {comando(['lein', 'version'], env)}",
         f"Python (orquestador e implementación de referencia): {platform.python_version()}",
+        *[f"SHA-256 de simulador-{l}.jar: {sha256(RAIZ / l / f'simulador-{l}.jar')}" for l in LENGUAJES
+          if (RAIZ / l / f"simulador-{l}.jar").exists()],
         f"Commit: {comando(['git', '-C', str(RAIZ), 'rev-parse', '--short', 'HEAD'], env)}"
         f"{' (con cambios sin guardar)' if cambios_sin_guardar(env) else ''}",
         "",
+        *([f"Nota: {args.nota}", ""] if args.nota else []),
         "== Protocolo ==",
         f"Escenarios: {', '.join(args.escenarios)}",
         f"Rondas: {args.calentamiento} de calentamiento (ronda 0, no cuenta) + {args.rondas} medidas",
@@ -320,6 +333,7 @@ def main():
     analizador.add_argument("--forzar", action="store_true", help="medir aunque el Mac use batería o bajo consumo")
     analizador.add_argument("--sin-construir", action="store_true", help="usar los .jar que ya existen")
     analizador.add_argument("--lenguajes", default=",".join(LENGUAJES))
+    analizador.add_argument("--nota", default="", help="texto que se agrega a entorno.txt")
     args = analizador.parse_args()
     args.escenarios = ["V1", "V2"] if args.prueba else ESCENARIOS
     args.calentamiento, args.rondas = (0, 1) if args.prueba else (1, 10)
@@ -337,6 +351,10 @@ def main():
     correctos = verificar(lenguajes, env, carpeta)
 
     paso("5. Medición")
+    propia = memoria_mb(resource.getrusage(resource.RUSAGE_SELF))
+    print(f"    memoria máxima del orquestador hasta ahora: {propia:.0f} MB (queda por debajo de cualquier JVM)")
+    with open(carpeta / "entorno.txt", "a", encoding="utf-8") as f:
+        f.write(f"Memoria máxima del orquestador antes de medir: {propia:.0f} MB\n")
     with tempfile.TemporaryDirectory() as tmp:
         for escenario in args.escenarios:
             medir(escenario, lenguajes, 1 - args.calentamiento, args.rondas, env, carpeta, Path(tmp), correctos)

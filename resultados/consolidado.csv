@@ -1,0 +1,79 @@
+lenguaje,criterio,metrica,detalle,valor,puntaje
+java,Tiempo,t_operaciones_ms,V1,285.3345,74.45
+scala,Tiempo,t_operaciones_ms,V1,339.3135,62.61
+clojure,Tiempo,t_operaciones_ms,V1,212.4430,100.00
+java,Tiempo,t_operaciones_ms,V2,665.4730,100.00
+scala,Tiempo,t_operaciones_ms,V2,755.0655,88.13
+clojure,Tiempo,t_operaciones_ms,V2,758.8915,87.69
+java,Tiempo,t_operaciones_ms,V3,2418.7020,100.00
+scala,Tiempo,t_operaciones_ms,V3,2554.3950,94.69
+clojure,Tiempo,t_operaciones_ms,V3,3311.3425,73.04
+java,Tiempo,t_operaciones_ms,V4,12046.5600,100.00
+scala,Tiempo,t_operaciones_ms,V4,13000.5190,92.66
+clojure,Tiempo,t_operaciones_ms,V4,19806.2650,60.82
+java,Tiempo,t_operaciones_ms,C1,2528.7305,100.00
+scala,Tiempo,t_operaciones_ms,C1,2584.9375,97.83
+clojure,Tiempo,t_operaciones_ms,C1,3288.1875,76.90
+java,Tiempo,t_operaciones_ms,X1,2407.5070,100.00
+scala,Tiempo,t_operaciones_ms,X1,2474.9600,97.27
+clojure,Tiempo,t_operaciones_ms,X1,3279.7115,73.41
+java,Memoria,memoria_max_mb,V1,61.6500,100.00
+scala,Memoria,memoria_max_mb,V1,77.5000,79.55
+clojure,Memoria,memoria_max_mb,V1,105.9000,58.22
+java,Memoria,memoria_max_mb,V2,171.3500,88.33
+scala,Memoria,memoria_max_mb,V2,151.3500,100.00
+clojure,Memoria,memoria_max_mb,V2,184.5500,82.01
+java,Memoria,memoria_max_mb,V3,741.4000,80.74
+scala,Memoria,memoria_max_mb,V3,598.6000,100.00
+clojure,Memoria,memoria_max_mb,V3,658.9500,90.84
+java,Memoria,memoria_max_mb,V4,3064.6000,100.00
+scala,Memoria,memoria_max_mb,V4,3238.5000,94.63
+clojure,Memoria,memoria_max_mb,V4,3882.5500,78.93
+java,Memoria,memoria_max_mb,C1,737.8000,80.87
+scala,Memoria,memoria_max_mb,C1,596.6500,100.00
+clojure,Memoria,memoria_max_mb,C1,822.8000,72.51
+java,Memoria,memoria_max_mb,X1,733.7500,81.23
+scala,Memoria,memoria_max_mb,X1,596.0500,100.00
+clojure,Memoria,memoria_max_mb,X1,812.8500,73.33
+java,Rendimiento,vuelos_por_s,V1,2741.0813,100.00
+scala,Rendimiento,vuelos_por_s,V1,1854.9374,67.67
+clojure,Rendimiento,vuelos_por_s,V1,1193.3088,43.53
+java,Rendimiento,vuelos_por_s,V2,12908.5930,100.00
+scala,Rendimiento,vuelos_por_s,V2,10407.9236,80.63
+clojure,Rendimiento,vuelos_por_s,V2,6999.0749,54.22
+java,Rendimiento,vuelos_por_s,V3,38553.3136,100.00
+scala,Rendimiento,vuelos_por_s,V3,35222.4049,91.36
+clojure,Rendimiento,vuelos_por_s,V3,24747.2482,64.19
+java,Rendimiento,vuelos_por_s,V4,78011.7343,100.00
+scala,Rendimiento,vuelos_por_s,V4,71832.8294,92.08
+clojure,Rendimiento,vuelos_por_s,V4,46884.4211,60.10
+java,Rendimiento,vuelos_por_s,C1,37144.5694,100.00
+scala,Rendimiento,vuelos_por_s,C1,35062.4104,94.39
+clojure,Rendimiento,vuelos_por_s,C1,24729.3297,66.58
+java,Rendimiento,vuelos_por_s,X1,38482.9905,100.00
+scala,Rendimiento,vuelos_por_s,X1,36116.4101,93.85
+clojure,Rendimiento,vuelos_por_s,X1,24493.7393,63.65
+java,Calidad,Q1 líneas de código,,600.0000,58.67
+scala,Calidad,Q1 líneas de código,,352.0000,100.00
+clojure,Calidad,Q1 líneas de código,,466.0000,75.54
+java,Calidad,Q2 decisiones cada 100 líneas,,5.3300,100.00
+scala,Calidad,Q2 decisiones cada 100 líneas,,9.6600,55.18
+clojure,Calidad,Q2 decisiones cada 100 líneas,,12.4500,42.81
+java,Calidad,Q3 líneas duplicadas,,0.0000,100.00
+scala,Calidad,Q3 líneas duplicadas,,0.0000,100.00
+clojure,Calidad,Q3 líneas duplicadas,,0.0000,100.00
+java,Confiabilidad,Correctitud,7/7,7.0000,100.00
+java,Confiabilidad,Robustez,12/12,12.0000,100.00
+java,Confiabilidad,Estabilidad,60/60,60.0000,100.00
+scala,Confiabilidad,Correctitud,7/7,7.0000,100.00
+scala,Confiabilidad,Robustez,12/12,12.0000,100.00
+scala,Confiabilidad,Estabilidad,60/60,60.0000,100.00
+clojure,Confiabilidad,Correctitud,7/7,7.0000,100.00
+clojure,Confiabilidad,Robustez,12/12,12.0000,100.00
+clojure,Confiabilidad,Estabilidad,60/60,60.0000,100.00
+java,Uso funcional,Restricciones F1-F4,,50.0000,50.00
+java,Uso funcional,Densidad funcional cada 100 líneas,,20.1700,37.77
+scala,Uso funcional,Restricciones F1-F4,,50.0000,50.00
+scala,Uso funcional,Densidad funcional cada 100 líneas,,26.7000,50.00
+clojure,Uso funcional,Restricciones F1-F4,,50.0000,50.00
+clojure,Uso funcional,Densidad funcional cada 100 líneas,,16.7400,31.35

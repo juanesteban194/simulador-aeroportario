@@ -1,0 +1,29 @@
+ENTORNO DEL EXPERIMENTO
+Fecha: 2026-11-14T15:20:30-05:00
+Modo: medición completa
+
+== Equipo ==
+Sistema: Linux-6.18.44-fc-v470-x86_64-with-glibc2.39
+Procesador: x86_64
+Núcleos: 2
+Energía: no aplica (no es macOS)
+Modo de bajo consumo: no aplica (no es macOS)
+
+== Software ==
+Java: openjdk version "21.0.12.1" 2026-08-18 | OpenJDK Runtime Environment (build 21.0.12.1+1-1-24.04.4-Ubuntu) | OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-24.04.4-Ubuntu, mixed mode, sharing)
+Opciones de la JVM: -Xmx4g -XX:+UseG1GC
+Scala: 3.9.0 (project.scala) | no disponible
+Clojure: 1.12.0 (project.clj) | no disponible
+Python (orquestador e implementación de referencia): 3.13.18
+SHA-256 de simulador-java.jar: a34b2a538cb84450fa3d5d416c75a0c3aa3ac4adaa617159c28b5c88339f92c7
+SHA-256 de simulador-scala.jar: 8bac948c0dfa0149ca143fcf3742abc3e1e732a34509678eccde245c6509bd1a
+SHA-256 de simulador-clojure.jar: 47aad9ed1722a22c334d9d0ca61bfc59354454790d694432705da78e3cec681e
+Commit: 9c61a84 (con cambios sin guardar)
+
+Nota: Los tres .jar se construyeron en el MacBook Pro del equipo con las herramientas oficiales (javac, scala-cli con Scala 3.9.0, lein uberjar con Clojure 1.12.0) y se midieron en este contenedor Linux de la nube con OpenJDK 21, porque la medición no se pudo lanzar en el Mac de forma desatendida. Los tres lenguajes se midieron en el mismo entorno y con las mismas opciones.
+
+== Protocolo ==
+Escenarios: V1, V2, V3, V4, C1, X1
+Rondas: 1 de calentamiento (ronda 0, no cuenta) + 10 medidas
+Orden de los lenguajes rotado por ronda; 1 s de pausa entre ejecuciones; un proceso nuevo por ejecución
+Memoria máxima del orquestador antes de medir: 20 MB

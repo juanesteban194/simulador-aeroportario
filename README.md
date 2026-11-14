@@ -27,6 +27,30 @@ según prioridades y disponibilidad.
 | Confiabilidad | 10 % |
 | Uso funcional | 10 % |
 
+## Resultado
+
+| Posición | Lenguaje | Tiempo | Memoria | Rendimiento | Calidad | Confiabilidad | Uso funcional | **Final** |
+|---|---|---|---|---|---|---|---|---|
+| 1.º | **Java** | 95,74 | 88,53 | 100,00 | 86,22 | 100,00 | 87,77 | **93,35** |
+| 2.º | Scala | 88,87 | 95,70 | 86,66 | 85,06 | 100,00 | 100,00 | **91,45** |
+| 3.º | Clojure | 78,64 | 75,97 | 58,71 | 72,78 | 100,00 | 81,35 | **75,65** |
+
+Las tres versiones producen salidas idénticas en los 19 casos de verificación. Java gana en 6 de 7 variantes de
+la prueba de solidez (sin el criterio de Rendimiento gana Scala). Análisis completo en el
+[informe técnico](entrega/Informe_tecnico.docx).
+
+![Puntaje por criterio](resultados/graficos/02_puntaje_por_criterio.png)
+
+## Cómo ejecutarlo
+
+```bash
+bash experimento/verificar.sh            # construye las tres versiones y verifica la equivalencia (19 casos)
+python3 experimento/ejecutar.py          # medición completa (unos 20 minutos)
+python3 experimento/calidad.py && python3 experimento/funcional.py
+python3 experimento/clasificar.py && python3 experimento/graficos.py
+python3 informe/generar_informe.py       # informe técnico en entrega/
+```
+
 ## Estado del trabajo
 
 El proyecto avanza por bloques. Antes de pasar al siguiente bloque se toman y registran todas las decisiones
@@ -40,9 +64,9 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 | 3 | Diseño del experimento ([03_experimento.md](docs/03_experimento.md)) | ✅ |
 | 4 | Criterios y clasificación ([04_criterios.md](docs/04_criterios.md)) | ✅ |
 | 5 | Implementación en Java, Scala y Clojure, verificada contra la referencia (`bash experimento/verificar.sh` o «Verificar equivalencia» en IntelliJ) | ✅ |
-| 6 | Ejecución y medición (`python3 experimento/ejecutar.py`; prueba: `--prueba`) | ⏳ |
-| 7 | Consolidación y ranking automático | ⏳ |
-| 8 | Informe técnico y sustentación | — |
+| 6 | Ejecución y medición (`python3 experimento/ejecutar.py`): 198 ejecuciones, todas correctas | ✅ |
+| 7 | Consolidación y ranking automático ([clasificacion.md](resultados/clasificacion.md)) | ✅ |
+| 8 | Informe técnico ([Informe_tecnico.docx](entrega/Informe_tecnico.docx)), [documento de estudio](docs/06_documento_de_estudio.md) y [guion](docs/07_guion_de_exposicion.md) | ✅ |
 
 ## Estructura (se completa por bloques)
 

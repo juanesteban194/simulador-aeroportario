@@ -42,3 +42,6 @@ java/clases/
 # Resultados que no son evidencia: la prueba del orquestador y los registros de construcción
 resultados/prueba/
 resultados/construccion_*.log
+
+# Archivo intermedio del informe (se genera con informe/generar_informe.py)
+informe/informe.json

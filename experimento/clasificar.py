@@ -11,6 +11,7 @@
 
  Salidas (en resultados/):
    consolidado.csv          cada métrica en bruto y cada puntaje, por lenguaje
+   puntajes.csv             el puntaje de cada criterio, el final y la posición
    clasificacion.md         posiciones, puntajes por criterio, explicación de cada posición y prueba de solidez
 
  Uso: python3 experimento/clasificar.py [--resultados <carpeta>]
@@ -167,11 +168,14 @@ def variantes():
 
 def explicacion(lenguaje, puntajes, posicion):
     suyo = puntajes[lenguaje]
-    gana = [c for c in PESOS if suyo[c] >= max(puntajes[l][c] for l in LENGUAJES) - 1e-9]
-    pierde = [(c, max(puntajes[l][c] for l in LENGUAJES) - suyo[c]) for c in PESOS if c not in gana]
+    empate = [c for c in PESOS if max(puntajes[l][c] for l in LENGUAJES) - min(puntajes[l][c] for l in LENGUAJES) < 1e-9]
+    gana = [c for c in PESOS if c not in empate and suyo[c] >= max(puntajes[l][c] for l in LENGUAJES) - 1e-9]
+    pierde = [(c, max(puntajes[l][c] for l in LENGUAJES) - suyo[c]) for c in PESOS
+              if c not in gana and c not in empate]
     pierde.sort(key=lambda par: -par[1] * PESOS[par[0]])
     texto = f"**{posicion}.º {NOMBRE[lenguaje]}** ({final(suyo, PESOS):.2f} puntos). "
     texto += (f"Es el mejor en {', '.join(gana)}. " if gana else "No es el mejor en ningún criterio. ")
+    texto += (f"Los tres empatan en {', '.join(empate)}. " if empate else "")
     if pierde:
         texto += "Pierde " + "; ".join(
             f"{d:.1f} puntos en {c} (le restan {d * PESOS[c]:.2f} al final)" for c, d in pierde) + "."
@@ -218,6 +222,13 @@ def main():
         escritor = csv.DictWriter(f, fieldnames=list(filas[0]))
         escritor.writeheader()
         escritor.writerows(filas)
+    orden = ordenar(puntajes, PESOS)
+    with open(carpeta / "puntajes.csv", "w", newline="", encoding="utf-8") as f:
+        escritor = csv.writer(f)
+        escritor.writerow(["posicion", "lenguaje", *PESOS, "Final"])
+        for posicion, lenguaje in enumerate(orden, start=1):
+            escritor.writerow([posicion, lenguaje, *[f"{puntajes[lenguaje][c]:.2f}" for c in PESOS],
+                               f"{final(puntajes[lenguaje], PESOS):.2f}"])
     print(informe(puntajes, carpeta))
 
 

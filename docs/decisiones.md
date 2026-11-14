@@ -261,7 +261,8 @@ La implementación de referencia se actualizó con estas reglas; sus salidas esp
 
 ## Bloque 6 · Ejecución del experimento
 
-Se aceptaron las recomendaciones. Bloque en curso.
+Se aceptaron las recomendaciones. **Bloque cerrado:** 198 ejecuciones (6 escenarios × 11 rondas × 3
+lenguajes), todas con salida correcta.
 
 ### D6.1 · Un solo orquestador
 - **Elegido:** `experimento/ejecutar.py`, solo con la biblioteca estándar de Python. Hace el protocolo completo
@@ -289,14 +290,33 @@ Se aceptaron las recomendaciones. Bloque en curso.
 - **Elegido:** `ru_maxrss` de `os.wait4` sobre el proceso de la JVM. macOS lo entrega en bytes y Linux en KB;
   el orquestador convierte ambos a MB (1 MB = 1.048.576 bytes).
 
+### D6.7 · Dónde se midió (cambio respecto a D6.3)
+- **Hecho:** los tres `.jar` se construyeron en el Mac con las herramientas oficiales y se verificaron allí
+  (15/15) y en la nube (19/19). La medición se ejecutó con esos mismos `.jar` (huellas SHA-256 en
+  `resultados/entorno.txt`) en un contenedor Linux de 2 núcleos con OpenJDK 21.
+- **Por qué:** el equipo pidió que todo se hiciera de forma autónoma, y la medición no se pudo lanzar en el Mac
+  sin intervención (IntelliJ y Terminal solo aceptan clics automáticos; el entorno aislado del Mac tiene Java 11
+  y 3 GB de memoria).
+- **Efecto:** la comparación es válida (mismo entorno, protocolo y opciones para los tres); los valores absolutos
+  serían menores en el Mac. Para repetirla allí: `python3 experimento/ejecutar.py`.
+
+### D6.8 · Corrección de la medición de memoria
+- **Problema:** en la primera corrida todas las ejecuciones marcaban 174 MB. En Linux, la memoria máxima que
+  informa `wait4` para un hijo parte de la memoria del proceso padre cuando lo crea, y el orquestador había
+  cargado el archivo de un millón de vuelos.
+- **Solución:** el orquestador lee los archivos por partes (huellas y conteos), ocupa 20 MB (menos que cualquier
+  JVM) y registra esa cifra en `entorno.txt`. Se descartó la corrida y se repitió completa.
+
 ### D6.6 · Qué se versiona
 - `resultados/entorno.txt`, `resultados/verificacion.csv`, `resultados/crudos/*.csv` y `resultados/resumen.md`
   (evidencia del entregable 13). No se versionan las salidas generadas ni los registros de construcción.
 
 ## Bloque 7 · Consolidación y clasificación
 
-Bloque en curso. Calidad y uso funcional ya están calculados (no dependen de la medición); el clasificador está
-probado con datos de ensayo y con el ejemplo numérico de `04_criterios.md`.
+**Bloque cerrado.** El equipo aceptó las precisiones D7.1 a D7.4 al pedir que se completara todo el trabajo.
+
+**Resultado:** 1.º Java (93,35) · 2.º Scala (91,45) · 3.º Clojure (75,65). Java gana en 6 de 7 variantes de la
+prueba de solidez; sin el criterio de Rendimiento gana Scala. Detalle en `resultados/clasificacion.md`.
 
 ### D7.1 · Cómo se leen los fuentes (`experimento/fuentes.py`)
 - Se quitan comentarios y el contenido de las cadenas; las comillas se conservan para que una línea con solo
@@ -333,3 +353,18 @@ Para que la misma operación cuente igual en los tres lenguajes:
 | Java | 600 | 5,33 | 0 | 4/4 | 20,17 |
 | Scala | 352 | 9,66 | 0 | 4/4 | 26,70 |
 | Clojure | 466 | 12,45 | 0 | 4/4 | 16,74 |
+
+## Bloque 8 · Informe y sustentación
+
+**Bloque cerrado.**
+
+### D8.1 · Informe técnico en Word, generado desde los resultados
+- `informe/generar_informe.py` lee `resultados/` y escribe `entrega/Informe_tecnico.docx` (con
+  `informe/construir_docx.js`). Las cifras y tablas salen de los datos; los párrafos de análisis están en
+  `informe/contenido.py` y `informe/resultados.py`.
+- **Por qué:** si se repite la medición (por ejemplo en el Mac), el informe se regenera con una orden; solo hay
+  que revisar los párrafos de análisis.
+
+### D8.2 · Material de estudio y sustentación
+- `docs/06_documento_de_estudio.md`: qué se hizo, por qué y cómo, con resultados y preguntas probables.
+- `docs/07_guion_de_exposicion.md`: 18 minutos, reparto por integrante, qué mostrar y qué decir.
