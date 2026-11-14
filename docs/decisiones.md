@@ -292,3 +292,44 @@ Se aceptaron las recomendaciones. Bloque en curso.
 ### D6.6 · Qué se versiona
 - `resultados/entorno.txt`, `resultados/verificacion.csv`, `resultados/crudos/*.csv` y `resultados/resumen.md`
   (evidencia del entregable 13). No se versionan las salidas generadas ni los registros de construcción.
+
+## Bloque 7 · Consolidación y clasificación
+
+Bloque en curso. Calidad y uso funcional ya están calculados (no dependen de la medición); el clasificador está
+probado con datos de ensayo y con el ejemplo numérico de `04_criterios.md`.
+
+### D7.1 · Cómo se leen los fuentes (`experimento/fuentes.py`)
+- Se quitan comentarios y el contenido de las cadenas; las comillas se conservan para que una línea con solo
+  una cadena siga contando.
+- En Scala, lo que va dentro de `${...}` en una cadena interpolada se conserva: es código, como `+` en Java o
+  `(str ...)` en Clojure.
+
+### D7.2 · Precisiones de los puntos de decisión (Q2)
+- `and` y `or` de Clojure cuentan 1 por aparición, igual que cada `&&` o `||` en Java y Scala.
+- En Scala, `case` cuenta solo si lleva `=>` (dentro de `match` o de una función parcial); no cuentan los
+  `case` de un `enum`, `case class`, `case object` ni `case _ =>`.
+- Duplicación (Q3): `jscpd --min-tokens 50 --mode weak` (ignora comentarios), cada versión por separado.
+
+### D7.3 · Precisiones de la densidad funcional
+Para que la misma operación cuente igual en los tres lenguajes:
+- Una variante que solo cambia el tipo del resultado cuenta como la operación base: `mapv`, `filterv`
+  (Clojure); `maxOption`, `minOption`, `maxByOption`, `minByOption` (Scala).
+- Un nombre usado para otra cosa no cuenta: `(count v)` sobre una colección es su tamaño (como `.size()`);
+  solo cuenta `(count (filter ...))`. `mapa.getOrElse(clave, valor)` de Scala es una búsqueda en un mapa (como
+  `getOrDefault`); solo cuenta `opcion.getOrElse(valor)`.
+- `Optional.or(...)` de Java cuenta como Opcionales: es la misma operación que `Option.orElse(...)` de Scala.
+
+### D7.4 · Clasificador (`experimento/clasificar.py`)
+- Tiempo, memoria y rendimiento: mediana de las rondas medidas con salida correcta; sin ninguna, 0 en ese
+  escenario.
+- Estabilidad: ejecuciones correctas sobre 60 fijas (6 escenarios × 10 rondas), aunque un escenario no se haya
+  podido medir.
+- Prueba de solidez: al quitar un criterio, su peso se reparte entre los demás en proporción a sus pesos.
+
+### Resultados parciales (código del commit actual)
+
+| | Líneas (Q1) | Decisiones cada 100 (Q2) | Duplicadas (Q3) | F1-F4 | Operaciones funcionales cada 100 |
+|---|---|---|---|---|---|
+| Java | 600 | 5,33 | 0 | 4/4 | 20,17 |
+| Scala | 352 | 9,66 | 0 | 4/4 | 26,70 |
+| Clojure | 466 | 12,45 | 0 | 4/4 | 16,74 |
