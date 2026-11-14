@@ -187,8 +187,8 @@ Se aceptaron las recomendaciones. El detalle está en `04_criterios.md`. Bloque 
 
 ## Bloque 5 · Implementación
 
-Se aceptaron las recomendaciones. Bloque en curso: Java y Clojure están terminados y verificados; Scala está
-escrito y falta compilarlo en el Mac.
+Se aceptaron las recomendaciones. **Bloque cerrado:** las tres versiones producen exactamente las salidas de la
+implementación de referencia.
 
 ### D5.1 · Orden de implementación
 - **Elegido:** Java → Scala → Clojure (antes: Scala → Java → Clojure).
@@ -234,7 +234,13 @@ escrito y falta compilarlo en el Mac.
   - Clojure: coincide en los 19 casos. Se probó con el Clojure 1.11 de Ubuntu, porque Leiningen no puede
     descargar dependencias en ese entorno; la construcción oficial (`lein uberjar`, Clojure 1.12) se
     verifica en el Mac.
-  - Scala: su sintaxis está revisada; se compila y verifica en el Mac.
+  - En el Mac (14-nov), con la construcción oficial de cada lenguaje (`javac`, `scala-cli` con Scala 3.9.0 y
+    `lein uberjar` con Clojure 1.12.0) y el JDK 21: Java, Scala y Clojure coinciden en E0, V1, V2 y R01-R12
+    (15/15 cada uno).
+  - Pendiente para el inicio del Bloque 6: generar V3, V4, C1 y X1 en el Mac y repetir la verificación, para
+    tener también Scala en los 19 casos antes de medir.
+  - Tamaño de los `.jar`: Java 49 KB, Clojure 5,2 MB y Scala 10 MB (Clojure y Scala incluyen su biblioteca
+    estándar). Es un dato para el informe.
 - `SIN_CONSTRUIR=1` usa los `.jar` ya construidos. `herramientas/entorno.sh` pone Homebrew y el JDK 21 en el
   PATH, porque IntelliJ no hereda el de la terminal.
 
