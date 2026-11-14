@@ -258,3 +258,37 @@ La implementación de referencia se actualizó con estas reglas; sus salidas esp
 ### D5.7 · Reparto para la sustentación (propuesto)
 - Sebastián Villa: Java · Juan Esteban Echavarría: Scala · Miguel Guarnizo: Clojure.
 - Cada uno explica su versión y debe poder explicar las otras dos con la guía del Bloque 8.
+
+## Bloque 6 · Ejecución del experimento
+
+Se aceptaron las recomendaciones. Bloque en curso.
+
+### D6.1 · Un solo orquestador
+- **Elegido:** `experimento/ejecutar.py`, solo con la biblioteca estándar de Python. Hace el protocolo completo
+  de `03_experimento.md` (sección 6): construir, registrar el entorno, regenerar y comprobar los escenarios,
+  verificar la equivalencia, medir, guardar los datos crudos y resumir.
+- **Por qué:** una sola orden, sin pasos manuales en los que equivocarse; el mismo procedimiento para los tres.
+
+### D6.2 · Prueba antes de medir
+- **Elegido:** `--prueba` hace 1 ronda de V1 y V2 y guarda en `resultados/prueba/` (no se versiona).
+- **Por qué:** detecta errores del orquestador en ~1 minuto, antes de la medición completa.
+
+### D6.3 · Dónde se ejecuta
+- **Elegido:** en la app Terminal de macOS, con IntelliJ y las demás aplicaciones cerradas, el Mac conectado al
+  cargador y sin modo de bajo consumo. El orquestador se detiene si detecta batería o bajo consumo (salvo
+  `--forzar`, que queda registrado en `entorno.txt`).
+- **Por qué:** IntelliJ indexa en segundo plano y consume CPU y memoria; eso alteraría la medición.
+
+### D6.4 · Duración y registro de cada ejecución
+- 6 escenarios × 11 rondas × 3 lenguajes = 198 ejecuciones, unos 20 minutos.
+- La ronda 0 (calentamiento) también queda en `crudos/` para transparencia, pero no entra en ningún cálculo.
+- Una ejecución es correcta si termina con código 0, no escribe en stderr y sus 3 archivos tienen la misma
+  huella SHA-256 que los esperados.
+
+### D6.5 · Memoria
+- **Elegido:** `ru_maxrss` de `os.wait4` sobre el proceso de la JVM. macOS lo entrega en bytes y Linux en KB;
+  el orquestador convierte ambos a MB (1 MB = 1.048.576 bytes).
+
+### D6.6 · Qué se versiona
+- `resultados/entorno.txt`, `resultados/verificacion.csv`, `resultados/crudos/*.csv` y `resultados/resumen.md`
+  (evidencia del entregable 13). No se versionan las salidas generadas ni los registros de construcción.

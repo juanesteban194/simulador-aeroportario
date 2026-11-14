@@ -7,6 +7,7 @@
 #  Uso: bash experimento/verificar.sh [java] [scala] [clojure] [referencia]
 #       sin argumentos verifica java, scala y clojure. "referencia" prueba el propio verificador.
 #       SIN_CONSTRUIR=1 usa los .jar que ya existen, sin volver a construirlos.
+#       RESULTADOS_CSV=<archivo> guarda además el resultado de cada caso (caso,lenguaje,resultado).
 #  Termina con código 0 solo si todo coincide.
 # =============================================================================
 set -uo pipefail
@@ -113,6 +114,11 @@ echo
   done
 } | awk -F'|' '{ for (i = 1; i <= NF; i++) { c[NR, i] = $i; if (length($i) > w[i]) w[i] = length($i) } n = NF }
            END { for (r = 1; r <= NR; r++) { for (i = 1; i <= n; i++) printf ("%-" w[i] "s  "), c[r, i]; print "" } }'
+if [ -n "${RESULTADOS_CSV:-}" ]; then
+  { echo "caso,lenguaje,resultado"
+    for L in $LENGUAJES; do sed "s/^\([^|]*\)|\(.*\)$/\1,$L,\2/" "$TMP/res_$L"; done
+  } >"$RESULTADOS_CSV"
+fi
 echo
 if [ "$FALLAS" -eq 0 ]; then echo "RESULTADO: todo coincide"; else echo "RESULTADO: $FALLAS caso(s) con diferencias"; fi
 [ "$FALLAS" -eq 0 ]

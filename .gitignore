@@ -38,3 +38,7 @@ datos/escenarios/X1/
 # Ejecutables construidos (se generan con <lenguaje>/construir.sh)
 *.jar
 java/clases/
+
+# Resultados que no son evidencia: la prueba del orquestador y los registros de construcción
+resultados/prueba/
+resultados/construccion_*.log
