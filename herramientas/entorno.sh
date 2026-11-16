@@ -12,3 +12,7 @@ if command -v brew >/dev/null 2>&1; then
   fi
   unset _jdk
 fi
+# Respaldo, al final del PATH (no cambia la JVM): Scala CLI instalado con Coursier en vez de Homebrew.
+_cs="$HOME/Library/Application Support/Coursier/bin"
+if [ -d "$_cs" ]; then export PATH="$PATH:$_cs"; fi
+unset _cs

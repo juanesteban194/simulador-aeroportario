@@ -43,6 +43,23 @@ la prueba de solidez (sin el criterio de Rendimiento gana Scala). Análisis comp
 
 ## Cómo ejecutarlo
 
+**El simulador, en cualquiera de los 4 lenguajes** (Java, Scala, Clojure y Python, que es la implementación de
+referencia y no compite). Si el `.jar` no existe o el código cambió, `simular.sh` lo construye solo.
+
+```bash
+bash simular.sh java                     # ejemplo E0; también scala, clojure o python
+bash simular.sh scala V1                 # otro escenario: E0, V1, V2, V3, V4, C1, X1
+bash simular.sh clojure pistas.csv vuelos.csv salida/mia   # archivos propios
+bash simular.sh todos V2                 # los 4 lenguajes y compara sus salidas byte a byte
+bash simular.sh                          # menú interactivo
+```
+
+Las salidas quedan en `salida/<lenguaje>/<escenario>/`. En IntelliJ están las mismas opciones en la carpeta
+**Simulador** del selector de ejecución (Run): «Simular · Java», «· Scala», «· Clojure», «· Python (referencia)»,
+«· los 4 y comparar» y «· menú». Para otro escenario, cambie *Script options* (por ejemplo `java V1`).
+
+**El experimento:**
+
 ```bash
 bash experimento/verificar.sh            # construye las tres versiones y verifica la equivalencia (19 casos)
 python3 experimento/ejecutar.py          # medición completa (unos 20 minutos)
@@ -73,6 +90,8 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 ```
 simulador-aeroportuario/
 ├── README.md
+├── simular.sh       ejecuta el simulador en Java, Scala, Clojure o Python (y los 4 comparados)
+├── .run/            configuraciones de ejecución de IntelliJ (Simulador y Verificar equivalencia)
 ├── docs/            método de trabajo, decisiones, requerimientos, contrato, experimento, criterios, informe
 ├── herramientas/    instalación del entorno
 ├── datos/           generador de datos, escenarios y salidas esperadas
@@ -93,6 +112,7 @@ Las tres versiones se ejecutan sobre **la misma JVM (JDK 21)**, empaquetadas com
 | JDK 21 (Temurin u OpenJDK) | Compilar y ejecutar Java; JVM común para los tres |
 | Scala CLI | Compilar y empaquetar la versión Scala |
 | Leiningen | Compilar por adelantado (AOT) y empaquetar la versión Clojure |
+| Python 3 | Implementación de referencia (`experimento/referencia.py`) y herramientas del experimento |
 | IntelliJ IDEA + plugin Cursive | Editar los tres lenguajes en un mismo IDE |
 
 **macOS:** `bash herramientas/instalar_entorno.sh` instala y verifica todo. Se puede ejecutar varias veces.

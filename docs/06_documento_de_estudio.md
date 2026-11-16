@@ -464,6 +464,12 @@ funcional.
 ## 10. Cómo ejecutar todo
 
 ```bash
+# Ejecutar el simulador en cualquiera de los 4 lenguajes (construye el .jar si falta o si el código cambió)
+bash simular.sh java                 # o scala, clojure, python (referencia); escenario E0 por defecto
+bash simular.sh scala V1             # otro escenario: E0, V1, V2, V3, V4, C1, X1
+bash simular.sh todos V2             # los 4 lenguajes y compara sus salidas byte a byte
+bash simular.sh                      # menú interactivo
+
 # Verificar que las tres versiones producen la misma salida (construye los .jar)
 bash experimento/verificar.sh
 
@@ -481,8 +487,10 @@ python3 experimento/graficos.py
 java -jar java/simulador-java.jar datos/ejemplo/pistas.csv datos/ejemplo/vuelos.csv salida
 ```
 
-En IntelliJ hay una configuración compartida, **Verificar equivalencia** (`.run/`), que ejecuta el
-verificador con ▶.
+En IntelliJ hay configuraciones compartidas (`.run/`): **Verificar equivalencia** y la carpeta **Simulador**
+(«Simular · Java», «· Scala», «· Clojure», «· Python (referencia)», «· los 4 y comparar» y «· menú»), que
+se ejecutan con ▶. Las salidas quedan en `salida/<lenguaje>/<escenario>/`; para otro escenario se cambia
+*Script options* (por ejemplo `java V1`).
 
 ## 11. Estructura del repositorio
 
