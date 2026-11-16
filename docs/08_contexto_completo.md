@@ -53,7 +53,7 @@
 | Equipo | Sebastián Villa · Miguel Guarnizo · Juan Esteban Echavarría |
 | Proyecto de clase elegido | 2. Simulador de operaciones aeroportuarias |
 | Lenguajes | Java 21, Scala 3.9.0 y Clojure 1.12.0, los tres sobre la JVM (JDK 21) |
-| Repositorio | https://github.com/juanesteban194/simulador-aeroportario- (público) |
+| Repositorio | https://github.com/juanesteban194/simulador-aeroportario (público; antes `simulador-aeroportario-`) |
 | Resultado | **1.º Java (93,35)** · 2.º Scala (91,45) · 3.º Clojure (75,65) |
 | Correctitud | Las tres versiones producen archivos idénticos byte a byte en los 19 casos de verificación |
 | Reparto en la sustentación | Sebastián: Java y experimento · Juan Esteban: introducción, diseño, Scala y conclusión · Miguel: Clojure y resultados |
