@@ -5,6 +5,10 @@ Ejecuta DE VERDAD el programa del lenguaje elegido (los mismos .jar del experime
 referencia en Python) sobre un escenario o sobre datos propios, y entrega a la página todo lo que produjo:
 las entradas, operaciones.csv, errores.csv, reporte.txt, lo que salió en pantalla y los tiempos de --medir.
 La página (interfaz/index.html) reproduce esa ejecución paso a paso.
+Escenarios: E0, V1 (1.000), V2 (10.000), V3 (100.000), V4 (1.000.000), C1 y X1 (100.000). En los de más de
+20.000 vuelos el programa procesa el escenario completo y al navegador se envían sus primeros días completos
+(unos 10.000 vuelos) con las operaciones y los errores que les corresponden: como el algoritmo solo decide con
+vuelos ya programados, esas asignaciones son exactamente las de la ejecución completa.
 
 Uso:  python3 interfaz/servidor.py [--puerto 8765] [--sin-navegador]
       también: bash simular.sh interfaz   o   «Simular · interfaz gráfica» en IntelliJ
@@ -33,14 +37,17 @@ ETAPAS = ("lectura", "validacion", "simulacion", "reportes", "escritura")
 LENGUAJES = {"java": "Java", "scala": "Scala", "clojure": "Clojure", "python": "Python (referencia)"}
 HERRAMIENTA = {"java": "javac", "scala": "scala-cli", "clojure": "lein"}
 LIMITE_PROPIO = 5_000_000          # bytes por archivo de datos propios
+ANIMABLES = 20_000                 # hasta esta cantidad de vuelos se envía todo al navegador
+POR_TRAMO = 10_000                 # en escenarios más grandes se envían los primeros días completos (unos 10.000 vuelos)
 CANDADO = threading.Lock()         # una ejecución a la vez: las salidas comparten carpeta
 
-# Escenarios que se pueden animar. V4 (1.000.000 de vuelos) se deja fuera: es demasiado para el navegador.
+# Escenarios disponibles. Los grandes se ejecutan completos y en el navegador se reproducen sus primeros días.
 ESCENARIOS = {
     "E0": ("Ejemplo resuelto a mano", "datos/ejemplo/pistas.csv", "datos/ejemplo/vuelos.csv", "datos/ejemplo/esperado"),
     "V1": ("Volumen · 1.000 vuelos", "datos/aeropuerto/pistas.csv", "datos/escenarios/V1/vuelos.csv", "datos/escenarios/V1/esperado"),
     "V2": ("Volumen · 10.000 vuelos", "datos/aeropuerto/pistas.csv", "datos/escenarios/V2/vuelos.csv", "datos/escenarios/V2/esperado"),
     "V3": ("Volumen · 100.000 vuelos", "datos/aeropuerto/pistas.csv", "datos/escenarios/V3/vuelos.csv", "datos/escenarios/V3/esperado"),
+    "V4": ("Volumen · 1.000.000 de vuelos", "datos/aeropuerto/pistas.csv", "datos/escenarios/V4/vuelos.csv", "datos/escenarios/V4/esperado"),
     "C1": ("Congestión · 100.000 vuelos", "datos/aeropuerto/pistas.csv", "datos/escenarios/C1/vuelos.csv", "datos/escenarios/C1/esperado"),
     "X1": ("Errores · 100.000 vuelos, 10 % inválidos", "datos/aeropuerto/pistas.csv", "datos/escenarios/X1/vuelos.csv", "datos/escenarios/X1/esperado"),
 }
@@ -127,6 +134,50 @@ def leer(ruta):
     return ruta.read_text(encoding="utf-8", errors="replace") if ruta.exists() else ""
 
 
+def minutos(texto):
+    """'D3 08:15' → minutos desde el inicio del día 1."""
+    dia, hm = texto.split(" ")
+    return (int(dia[1:]) - 1) * 1440 + int(hm[:2]) * 60 + int(hm[3:])
+
+
+def tramo(vuelos, errores, operaciones):
+    """Para escenarios grandes: los primeros días completos (al menos POR_TRAMO vuelos) y lo que les corresponde.
+
+    La reproducción es exacta en ese tramo: lo que la torre decide en el minuto t solo depende de los vuelos
+    programados hasta t. Los archivos vienen ordenados por día (lo garantiza el generador).
+    """
+    lineas = vuelos.split("\n")
+    registros = sum(1 for l in lineas[1:] if l.strip())
+    if registros <= ANIMABLES:
+        return None
+    contados, dias, corte = 0, 0, len(lineas)
+    for i, l in enumerate(lineas[1:], start=1):
+        campos = l.split(",")
+        dia = campos[5].strip() if len(campos) > 5 else ""
+        if dia.isdigit() and int(dia) == dias + 1:      # empieza el día siguiente (un día dañado no cuenta)
+            if contados >= POR_TRAMO:
+                corte = i
+                break
+            dias += 1
+        if l.strip():
+            contados += 1
+    limite = dias * 1440 - 1
+    ops = operaciones.split("\n")
+    errs = errores.split("\n")
+    ops_tramo = [ops[0]] + [o for o in ops[1:] if o and minutos(o.split(",")[7]) <= limite]
+    errs_tramo = [errs[0]] + [e for e in errs[1:] if e and (e.startswith("pistas,") or int(e.split(",")[1]) <= corte)]
+    return {
+        "vuelos": "\n".join(lineas[:corte]) + "\n",
+        "errores": "\n".join(errs_tramo) + "\n",
+        "operaciones": "\n".join(ops_tramo) + "\n",
+        "info": {"dias": dias, "minutoLimite": limite,
+                 "vuelosMostrados": sum(1 for l in lineas[1:corte] if l.strip()), "vuelosTotales": registros,
+                 "operacionesMostradas": len(ops_tramo) - 1, "operacionesTotales": sum(1 for o in ops[1:] if o),
+                 "erroresVuelosTotales": sum(1 for e in errs[1:] if e.startswith("vuelos,")),
+                 "erroresPistasTotales": sum(1 for e in errs[1:] if e.startswith("pistas,"))},
+    }
+
+
 def atender(pedido):
     lenguaje = pedido.get("lenguaje")
     if lenguaje not in LENGUAJES:
@@ -170,6 +221,11 @@ def atender(pedido):
         valores = medicion.read_text().splitlines()[1].split(",")
         etapas = dict(zip(ETAPAS, (int(x) for x in valores)))
     reporte = salida / "reporte.txt"
+    entrada = {"pistas": leer(pistas), "vuelos": leer(vuelos)}
+    textos = {a: leer(salida / a) for a in ARCHIVOS}
+    recorte = tramo(entrada["vuelos"], textos["errores.csv"], textos["operaciones.csv"]) if r.returncode == 0 else None
+    if recorte:
+        entrada["vuelos"], textos["errores.csv"], textos["operaciones.csv"] = recorte["vuelos"], recorte["errores"], recorte["operaciones"]
     coincide = None
     if r.returncode == 0 and esperado is not None and esperado.is_dir():
         coincide = all((salida / a).read_bytes() == (esperado / a).read_bytes() for a in ARCHIVOS)
@@ -182,8 +238,9 @@ def atender(pedido):
         "etapasNs": etapas,
         "construccion": registro,
         "rutas": {"pistas": relativa(pistas), "vuelos": relativa(vuelos), "salida": relativa(salida)},
-        "entrada": {"pistas": leer(pistas), "vuelos": leer(vuelos)},
-        "salida": {a: leer(salida / a) for a in ARCHIVOS},
+        "entrada": entrada,
+        "salida": textos,
+        "recorte": recorte["info"] if recorte else None,
         "tamanos": {a: (salida / a).stat().st_size for a in ARCHIVOS if (salida / a).exists()},
         "pantalla": r.stdout.decode("utf-8", "replace"),
         "errorEstandar": r.stderr.decode("utf-8", "replace"),

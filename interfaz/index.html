@@ -94,6 +94,8 @@
   .interruptor input:checked { background: var(--primario); }
   .interruptor input:checked::after { transform: translateX(12px); }
   canvas { display: block; width: 100%; }
+  .info { margin: 0; background: #F2F4F7; border-radius: 8px; padding: 9px 12px; font-size: 13px; color: var(--texto2); }
+  .info b { color: var(--texto); font-weight: 600; }
   .vacio { border: 1px dashed var(--borde); border-radius: 12px; padding: 48px 32px; text-align: center; color: var(--texto2); }
   .vacio h3 { margin: 0 0 6px; font-size: 17px; color: var(--texto); font-weight: 600; letter-spacing: -.01em; }
   .vacio p { margin: 0 auto; max-width: 520px; }
@@ -226,6 +228,7 @@
           <select id="selVentana" title="Ventana de tiempo visible"></select>
         </div>
       </div>
+      <p class="info" id="infoTramo" hidden></p>
       <div class="vacio" id="vacio"><h3>La simulación aparecerá aquí</h3><p>Verás cada pista en una línea de tiempo, los vuelos que llegan y, a la derecha, por qué la torre asigna cada pista. El reloj avanza de evento en evento, como el algoritmo.</p></div>
       <canvas id="lienzo" hidden></canvas>
       <div class="leyenda" id="leyenda" hidden><span><i style="background:var(--aterriza)"></i>Aterrizaje</span><span><i style="background:var(--despega)"></i>Despegue</span><span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--emerg)"></i>Emergencia</span><span><i style="background:#E4E7EC"></i>Reservada</span><label class="interruptor" style="margin-left:auto"><input type="checkbox" id="chkSaltar" checked>Saltar tiempos sin eventos</label></div>
@@ -354,7 +357,8 @@ function construirModelo(d) {
   vuelos.forEach(v => { const m = motivoNoAsignable(v, pistas); if (m) noAsignables.push({ v, motivo: m }); else asignables.push(v); });
   noAsignables.sort((a, b) => a.v.prog - b.v.prog || cmpTexto(a.v.codigo, b.v.codigo));
   const operativas = pistas.filter(p => p.estado === "Operativa");
-  const traza = simularTraza(asignables, operativas);
+  const limite = d.recorte ? d.recorte.minutoLimite : Infinity;
+  const traza = simularTraza(asignables, operativas, limite);
   const ops = operacionesCsv(d.salida["operaciones.csv"]);
   const deTraza = traza.pasos.flatMap(p => p.asignaciones);
   const coincide = deTraza.length === ops.length && deTraza.every((a, i) => a.v.codigo === ops[i].codigo && a.pista.id === ops[i].pista && a.ini === ops[i].ini && a.fin === ops[i].fin);
@@ -372,7 +376,7 @@ function construirModelo(d) {
 
 // La misma simulación que TorreControl (12 filas, primer pendiente, pista libre de menor id, RN05, salto al
 // siguiente evento), guardando en cada paso quién compitió y por qué ganó cada uno.
-function simularTraza(asignables, operativas) {
+function simularTraza(asignables, operativas, limite) {
   const grupos = new Map();
   asignables.forEach(v => { const k = v.operacion + "|" + v.categoria + "|" + v.prioridad; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(v); });
   const filas = [...grupos.entries()].map(([k, vs]) => ({ clave: k, vuelos: vs.sort((a, b) => a.prog - b.prog || cmpTexto(a.codigo, b.codigo)) }));
@@ -387,6 +391,7 @@ function simularTraza(asignables, operativas) {
   const porLlegada = asignables.slice().sort((a, b) => a.prog - b.prog || cmpTexto(a.codigo, b.codigo));
   let llegada = 0;
   for (let guarda = 0; guarda < 5e6; guarda++) {
+    if (minuto > limite) break;          // escenario grande: solo el tramo reproducido
     const liberadas = operativas.filter((p, j) => libres[j] === minuto && minuto > 0).map(p => p.id);
     const llegan = [];
     while (llegada < porLlegada.length && porLlegada[llegada].prog <= minuto) llegan.push(porLlegada[llegada++]);
@@ -449,7 +454,8 @@ function notaEtapa(html) { $("notaEtapa").innerHTML = html; }
 function ejecutar(cuerpo) {
   cancelarGuia(); pausar(); mostrarAviso(""); cargando(true);
   const nombre = $("selLenguaje").selectedOptions[0].textContent;
-  notaEtapa(`Ejecutando <b>${esc(nombre)}</b> sobre ${cuerpo.escenario === "propio" ? "tus datos" : esc(cuerpo.escenario)}. Si el código cambió, primero se construye el .jar.`);
+  const esc_ = (S.info && S.info.escenarios.find(e => e.id === cuerpo.escenario)) || null;
+  notaEtapa(`Ejecutando <b>${esc(nombre)}</b> sobre ${cuerpo.escenario === "propio" ? "tus datos" : esc(cuerpo.escenario)}${esc_ && esc_.vuelos >= 100000 ? ` (${miles(esc_.vuelos)} vuelos: tarda unos segundos)` : ""}. Si el código cambió, primero se construye el .jar.`);
   fetch("/api/ejecutar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) })
     .then(r => r.json()).then(d => {
       cargando(false);
@@ -479,24 +485,29 @@ function marcarEtapa(n) {
 }
 
 // ============================================================== Recorrido guiado
+function totales(M) {
+  const r = M.d.recorte, errP = M.errores.filter(e => e.archivo === "pistas").length;
+  const regV = r ? r.vuelosTotales : M.regV.length, errV = r ? r.erroresVuelosTotales : M.errores.length - errP;
+  return { regP: M.regP.length, errP, regV, errV, validosV: regV - errV, ops: r ? r.operacionesTotales : M.ops.length };
+}
 function recorridoGuiado() {
-  const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
+  const M = S.M, T = totales(M), t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
   marcarEtapa(1); abrirPestana("entrada");
-  notaEtapa(`<b>Lectura.</b> Se leyeron ${plural(M.regP.length, "registro", "registros")} de pistas y ${plural(M.regV.length, "registro", "registros")} de vuelos.`);
+  notaEtapa(`<b>Lectura.</b> Se leyeron ${plural(T.regP, "registro", "registros")} de pistas y ${plural(T.regV, "registro", "registros")} de vuelos.`);
   t(2200, () => {
     marcarEtapa(2); abrirPestana("validacion");
-    notaEtapa(`<b>Validación.</b> ${plural(M.pistas.length, "pista válida", "pistas válidas")} y ${plural(M.vuelos.length, "vuelo válido", "vuelos válidos")}. ${M.errores.length ? plural(M.errores.length, "registro con error va", "registros con error van") + " a errores.csv." : "Sin errores."}${M.noAsignables.length ? " " + plural(M.noAsignables.length, "vuelo no tiene", "vuelos no tienen") + " ninguna pista posible." : ""}`);
+    notaEtapa(`<b>Validación.</b> ${plural(M.pistas.length, "pista válida", "pistas válidas")} y ${plural(T.validosV, "vuelo válido", "vuelos válidos")}. ${T.errP + T.errV ? plural(T.errP + T.errV, "registro con error va", "registros con error van") + " a errores.csv." : "Sin errores."}${M.noAsignables.length && !M.d.recorte ? " " + plural(M.noAsignables.length, "vuelo no tiene", "vuelos no tienen") + " ninguna pista posible." : ""}`);
   });
   t(5000, () => {
     marcarEtapa(3); abrirPestana("operaciones");
-    notaEtapa(`<b>Simulación.</b> ${plural(M.asignables.length, "vuelo", "vuelos")} en ${plural(M.traza.filas.length, "fila", "filas")} y ${plural(M.operativas.length, "pista operativa", "pistas operativas")}. Usa las flechas para ir evento por evento.`);
+    notaEtapa(`<b>Simulación.</b> ${M.d.recorte ? `Se reproducen los primeros ${M.d.recorte.dias} días: ` : ""}${plural(M.asignables.length, "vuelo", "vuelos")} en ${plural(M.traza.filas.length, "fila", "filas")} y ${plural(M.operativas.length, "pista operativa", "pistas operativas")}. Usa las flechas para ir evento por evento.`);
     irA(M.t0); reproducir();
   });
 }
 function alTerminarSimulacion() {
   if (S.etapa !== 3) return;
   const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
-  t(900, () => { marcarEtapa(4); abrirPestana("reporte"); notaEtapa(`<b>Reportes.</b> Con las ${miles(M.ops.length)} operaciones se arma reporte.txt (RF08 a RF14), el mismo texto que el programa imprime.`); });
+  t(900, () => { marcarEtapa(4); abrirPestana("reporte"); notaEtapa(`<b>Reportes.</b> Con las ${miles(totales(M).ops)} operaciones se arma reporte.txt (RF08 a RF14), el mismo texto que el programa imprime.`); });
   t(3600, () => { marcarEtapa(5); abrirPestana("ejecucion"); notaEtapa(`<b>Escritura.</b> operaciones.csv, errores.csv y reporte.txt quedaron en ${esc(M.d.rutas.salida)}/.`); });
 }
 
@@ -508,6 +519,9 @@ function prepararVista() {
   S.ventana = lapso <= 40 ? 30 : lapso <= 300 ? 120 : lapso <= 2000 ? 480 : 1440;
   $("selVentana").value = String(S.ventana);
   $("vacio").hidden = true; $("lienzo").hidden = false; $("leyenda").hidden = false;
+  const r = M.d.recorte;
+  $("infoTramo").hidden = !r;
+  if (r) $("infoTramo").innerHTML = `Se reproducen los <b>primeros ${r.dias} días</b>: ${miles(r.vuelosMostrados)} de ${miles(r.vuelosTotales)} vuelos. El programa procesó el escenario completo, así que los tiempos, el reporte y las comprobaciones son de la ejecución completa.`;
   habilitarMandos(true);
   pintarResumen(); S.pasoMostrado = -2; S.minutoPintado = null;
   irA(M.t0);
@@ -685,7 +699,8 @@ function htmlEvento(i) {
   const fuera = M.noAsignables.filter(n => n.v.prog <= p.minuto && n.v.prog > previo).slice(0, 3)
     .map(n => `<div class="ev-item"><div class="ev-linea">${codigo(n.v)}<span class="etq rojo">Sin pista</span></div><div class="ev-razon">${esc(mayuscula(n.motivo))} (${n.v.categoria}, ${n.v.operacion.toLowerCase()}).</div></div>`).join("");
   let fin = "";
-  if (!p.asignaciones.length && !p.esperan.length && !p.pendientes) fin = '<p class="ev-fin">Fin de la simulación: no quedan vuelos pendientes.</p>';
+  if (M.d.recorte && i === M.traza.pasos.length - 1) fin = `<p class="ev-fin">Fin del tramo reproducido (primeros ${M.d.recorte.dias} días). El programa siguió con el resto del escenario.</p>`;
+  else if (!p.asignaciones.length && !p.esperan.length && !p.pendientes) fin = '<p class="ev-fin">Fin de la simulación: no quedan vuelos pendientes.</p>';
   else if (!p.asignaciones.length && !p.llegan.length && !p.liberadas.length) fin = '<p class="ev-fin">Sin cambios en este evento.</p>';
   return `<div class="ev-hora"><b>${hora(p.minuto)}</b> · evento ${miles(i + 1)} de ${miles(M.traza.pasos.length)}</div>`
     + sec("Asignaciones", asig) + sec("Esperan", esperan) + sec("Llegan", llegan) + sec("Se liberan", libres) + sec("No entran a la simulación", fuera) + fin;
@@ -719,18 +734,19 @@ function abrirPestana(p) {
     const tabla = (regs, archivo, max) => `<table><tr><th class="n">Línea</th><th>Registro</th><th>Resultado</th></tr>${regs.slice(0, max).map(r => {
       const mal = M.malas.get(archivo + ":" + r.linea), na = archivo === "vuelos" && !mal && M.lineaFuera.has(r.linea);
       return `<tr class="${mal ? "invalida" : na ? "noasig" : ""}"><td class="n">${r.linea}</td><td class="mono">${esc(r.crudo)}</td><td>${mal ? esc(mal) : na ? "Válido, sin pista posible" : "Válido"}</td></tr>`; }).join("")}</table>${regs.length > max ? `<p class="nota">Se muestran ${max} de ${miles(regs.length)} registros.</p>` : ""}`;
-    c.innerHTML = `<div class="dos"><div><p class="titulo-sec">${esc(d.rutas.pistas)}</p>${tabla(M.regP, "pistas", 50)}</div><div><p class="titulo-sec">${esc(d.rutas.vuelos)}</p>${tabla(M.regV, "vuelos", 150)}</div></div>`;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-sec">${esc(d.rutas.pistas)}</p>${tabla(M.regP, "pistas", 50)}</div><div><p class="titulo-sec">${esc(d.rutas.vuelos)}${d.recorte ? ` · ${miles(d.recorte.vuelosTotales)} registros` : ""}</p>${tabla(M.regV, "vuelos", 150)}</div></div>`;
   } else if (p === "validacion") {
-    const errP = M.errores.filter(e => e.archivo === "pistas").length, errV = M.errores.length - errP;
+    const T = totales(M);
     c.innerHTML = `<div class="dos"><div><p class="titulo-sec">Resultado (RF03)</p>
-      <table><tr><th></th><th class="n">Registros</th><th class="n">Válidos</th><th class="n">Inválidos</th></tr><tr><td>Pistas</td><td class="n">${miles(M.regP.length)}</td><td class="n">${miles(M.pistas.length)}</td><td class="n">${miles(errP)}</td></tr><tr><td>Vuelos</td><td class="n">${miles(M.regV.length)}</td><td class="n">${miles(M.vuelos.length)}</td><td class="n">${miles(errV)}</td></tr></table>
+      <table><tr><th></th><th class="n">Registros</th><th class="n">Válidos</th><th class="n">Inválidos</th></tr><tr><td>Pistas</td><td class="n">${miles(T.regP)}</td><td class="n">${miles(M.pistas.length)}</td><td class="n">${miles(T.errP)}</td></tr><tr><td>Vuelos</td><td class="n">${miles(T.regV)}</td><td class="n">${miles(T.validosV)}</td><td class="n">${miles(T.errV)}</td></tr></table>
+      ${d.recorte ? `<p class="nota">Las tablas de abajo muestran los registros de los primeros ${d.recorte.dias} días.</p>` : ""}
       <p class="nota">Se reporta solo el primer error de cada registro. Un código repetido se compara con su «dueño»: el registro válido de línea más baja.</p>
       <p class="titulo-sec" style="margin-top:22px">Vuelos sin pista posible (RF12)</p>
       <table><tr><th>Vuelo</th><th>Operación</th><th>Categoría</th><th>Motivo</th></tr>${M.noAsignables.slice(0, 200).map(n => `<tr class="noasig"><td class="mono">${esc(n.v.codigo)}</td><td>${n.v.operacion}</td><td>${n.v.categoria}</td><td>${esc(n.motivo)}</td></tr>`).join("") || '<tr><td colspan="4" class="tenue">Ninguno</td></tr>'}</table></div>
       <div><p class="titulo-sec">errores.csv</p><table><tr><th>Archivo</th><th class="n">Línea</th><th>Motivo</th></tr>${M.errores.slice(0, 300).map(e => `<tr class="invalida"><td>${esc(e.archivo)}</td><td class="n">${e.linea}</td><td>${esc(e.motivo)}</td></tr>`).join("") || '<tr><td colspan="3" class="tenue">Sin errores</td></tr>'}</table>${M.errores.length > 300 ? `<p class="nota">Se muestran 300 de ${miles(M.errores.length)}.</p>` : ""}</div></div>`;
   } else if (p === "operaciones") {
     const n = hasta(M.ops, S.t, o => o.ini), ult = M.ops.slice(Math.max(0, n - 200), n).reverse();
-    c.innerHTML = `<p class="titulo-sec">operaciones.csv · ${miles(n)} de ${miles(M.ops.length)} asignadas hasta ${hora(Math.floor(S.t))}</p>
+    c.innerHTML = `<p class="titulo-sec">operaciones.csv · ${miles(n)} asignadas hasta ${hora(Math.floor(S.t))} · ${d.recorte ? `${miles(d.recorte.operacionesTotales)} en total` : `de ${miles(M.ops.length)}`}</p>
       <table><tr><th>Código</th><th>Aerolínea</th><th>Operación</th><th>Categoría</th><th>Prioridad</th><th>Pista</th><th>Programada</th><th>Inicio</th><th>Fin</th><th class="n">Retraso</th></tr>${ult.map(o => `<tr><td class="mono">${esc(o.codigo)}</td><td>${esc(o.aerolinea)}</td><td>${o.operacion}</td><td>${o.categoria}</td><td>${o.prioridad === "Emergencia" ? '<span class="etq rojo">Emergencia</span>' : o.prioridad}</td><td class="mono">${esc(o.pista)}</td><td class="num">${hora(o.prog)}</td><td class="num">${hora(o.ini)}</td><td class="num">${hora(o.fin)}</td><td class="n">${o.retraso} min</td></tr>`).join("") || '<tr><td colspan="10" class="tenue">Aún no hay operaciones asignadas.</td></tr>'}</table>`;
   } else if (p === "reporte") {
     c.innerHTML = `<p class="titulo-sec">reporte.txt</p><pre>${esc(d.salida["reporte.txt"])}</pre>`;

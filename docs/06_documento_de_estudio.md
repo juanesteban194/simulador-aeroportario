@@ -519,6 +519,15 @@ RN03 y RN05, y la página comprueba que lleguen exactamente a las mismas asignac
 propios» se pueden cambiar las entradas en vivo (por ejemplo, volver emergencia un vuelo) y ver la nueva
 asignación en cualquiera de los cuatro lenguajes.
 
+**Escenarios grandes.** Se pueden elegir los siete escenarios, de 1.000 a 1.000.000 de vuelos. Hasta 20.000 vuelos
+la página reproduce todo. En V3, V4, C1 y X1 el programa procesa el escenario completo (tiempos, reporte y
+comprobaciones son de esa ejecución) y la página reproduce los **primeros días completos**, unos 10.000 vuelos.
+
+- **Por qué es exacto:** en el minuto *t* el algoritmo solo decide con vuelos programados hasta *t*. Lo que pase
+  después no cambia el pasado, así que las asignaciones de los primeros días son las mismas que en la ejecución
+  completa.
+- **Qué se ve:** V4 con Java tarda unos 13 s; con la referencia en Python, unos 23 s.
+
 ## 11. Estructura del repositorio
 
 ```

@@ -70,6 +70,12 @@ que lleguen a las mismas asignaciones. El servidor (`interfaz/servidor.py`) solo
 Python y escucha en `127.0.0.1`. Las tipografías (Inter y JetBrains Mono, licencia SIL OFL 1.1) están en
 `interfaz/fuentes/`, así que la interfaz funciona sin internet.
 
+Se pueden elegir todos los escenarios: E0, V1 (1.000 vuelos), V2 (10.000), V3, C1 y X1 (100.000) y V4 (1.000.000).
+En los de más de 20.000 vuelos el programa procesa el escenario completo, y la página reproduce sus primeros días
+(unos 10.000 vuelos) para que se pueda leer. Esas asignaciones son exactamente las de la ejecución completa,
+porque el algoritmo decide cada minuto solo con vuelos ya programados. V3, V4, C1 y X1 no vienen en el repositorio:
+se generan con `python3 datos/generador.py` (ver `datos/`).
+
 Las salidas quedan en `salida/<lenguaje>/<escenario>/`. En IntelliJ están las mismas opciones en la carpeta
 **Simulador** del selector de ejecución (Run): «Simular · Java», «· Scala», «· Clojure», «· Python (referencia)»,
 «· los 4 y comparar», «· interfaz gráfica (tiempo real)» y «· menú». Para otro escenario, cambie *Script options* (por ejemplo `java V1`).
