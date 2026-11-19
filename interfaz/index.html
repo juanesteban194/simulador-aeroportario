@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador aeroportuario · Torre de control en tiempo real</title>
+<style>
+  :root {
+    --fondo: #0B1626; --panel: #13233A; --panel2: #1A2E4A; --borde: #26405F;
+    --texto: #E6EDF5; --suave: #9FB2C8; --tenue: #6F86A0;
+    --ambar: #F2B33D; --aterriza: #4C8DF6; --despega: #22B07D; --emerg: #FF5D62; --gris: #4A5D75;
+    --java: #2A78D6; --scala: #EB6834; --clojure: #1BAF7A; --python: #C9A227;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  button, select { font: inherit; color: inherit; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: #0E1C30; border-bottom: 1px solid var(--borde); flex-wrap: wrap; }
+  .marca { display: flex; flex-direction: column; margin-right: auto; }
+  .marca b { font-size: 17px; letter-spacing: .2px; }
+  .marca span { color: var(--suave); font-size: 12px; }
+  .control { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--suave); text-transform: uppercase; letter-spacing: .6px; }
+  select { background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 7px 10px; min-width: 170px; text-transform: none; letter-spacing: 0; font-size: 14px; }
+  .btn { background: var(--panel2); border: 1px solid var(--borde); border-radius: 8px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--suave); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.prim { background: var(--ambar); color: #1B1300; border-color: var(--ambar); font-weight: 700; padding: 9px 18px; }
+  main { padding: 14px 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; }
+  .titulo-panel { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--suave); margin: 0 0 8px; }
+  /* Etapas */
+  #etapas { display: grid; grid-template-columns: repeat(5, 1fr) 1.15fr; gap: 10px; padding: 12px; }
+  .etapa { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: var(--fondo); transition: border-color .25s, background .25s; }
+  .etapa .n { color: var(--tenue); font-weight: 700; font-size: 12px; }
+  .etapa .nom { font-weight: 700; font-size: 15px; }
+  .etapa .ms { font-family: var(--mono); color: var(--suave); font-size: 12px; }
+  .etapa .barra { height: 4px; background: var(--panel2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .etapa .barra i { display: block; height: 100%; width: 0; background: var(--ambar); transition: width .6s; }
+  .etapa.activa { border-color: var(--ambar); background: #1E2A1C10; box-shadow: 0 0 0 1px var(--ambar) inset; }
+  .etapa.activa .n { color: var(--ambar); }
+  .etapa.hecha .n::after { content: " · lista"; color: var(--despega); }
+  #ejec { border: 1px dashed var(--borde); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--suave); display: flex; flex-direction: column; gap: 4px; }
+  #ejec .total { font-family: var(--mono); color: var(--texto); font-size: 14px; }
+  .sello { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-right: 4px; }
+  .ok { background: #12392B; color: #6EE0AE; } .mal { background: #3D1418; color: #FF9EA1; } .neutro { background: var(--panel2); color: var(--suave); }
+  /* Zona central */
+  #centro { display: grid; grid-template-columns: 300px 1fr 380px; gap: 14px; height: 680px; }
+  #centro > .panel { min-height: 0; }
+  #filas, #bitacora { padding: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  #listaFilas { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .fila { background: var(--fondo); border: 1px solid var(--borde); border-radius: 9px; padding: 7px 9px; }
+  .fila .cab { display: flex; justify-content: space-between; font-size: 12px; color: var(--suave); }
+  .fila .cab b { color: var(--texto); font-weight: 600; }
+  .fila .fichas { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; min-height: 22px; }
+  .ficha { font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--panel2); border: 1px solid transparent; }
+  .ficha.cabeza { border-color: var(--ambar); color: #FFE2A6; }
+  .ficha.emerg { box-shadow: inset 3px 0 0 var(--emerg); }
+  .vacia { color: var(--tenue); font-size: 11px; }
+  #pistasPanel { padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-y: auto; }
+  .reloj { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #hora { font-family: var(--mono); font-size: 34px; font-weight: 700; letter-spacing: 1px; color: var(--ambar); min-width: 190px; }
+  #pasoInfo { color: var(--suave); font-size: 12px; }
+  .mandos { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+  .mandos select { min-width: 0; padding: 6px 8px; font-size: 13px; }
+  .mandos label { font-size: 12px; color: var(--suave); display: flex; align-items: center; gap: 4px; }
+  #narracion { background: var(--fondo); border-left: 3px solid var(--ambar); padding: 8px 12px; border-radius: 6px; min-height: 40px; font-size: 14px; }
+  #lienzoCaja { position: relative; width: 100%; }
+  canvas { display: block; width: 100%; border-radius: 8px; background: var(--fondo); }
+  #estadoPistas { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+  .estPista { background: var(--fondo); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 9px; font-size: 12px; }
+  .estPista b { font-family: var(--mono); }
+  .estPista.ocupada { border-color: #3B5D86; }
+  .estPista.cerrada { opacity: .5; }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--suave); }
+  .leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+  #registro { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 13px; padding-right: 4px; }
+  .paso { border-left: 2px solid var(--borde); padding: 2px 0 2px 10px; }
+  .paso.actual { border-left-color: var(--ambar); }
+  .paso h4 { margin: 0 0 3px; font-family: var(--mono); font-size: 12px; color: var(--ambar); }
+  .paso p { margin: 2px 0; color: var(--suave); }
+  .paso p.asig { color: var(--texto); }
+  .paso p.espera { color: #F6C77A; }
+  .paso p.fuera { color: #FF9EA1; }
+  /* Pestañas */
+  #abajo { padding: 0; }
+  .pestanas { display: flex; gap: 2px; border-bottom: 1px solid var(--borde); padding: 6px 8px 0; flex-wrap: wrap; }
+  .pestana { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; cursor: pointer; color: var(--suave); }
+  .pestana.on { color: var(--texto); border-bottom-color: var(--ambar); }
+  .contenido { padding: 12px 14px; max-height: 360px; overflow: auto; }
+  pre { font-family: var(--mono); font-size: 12.5px; margin: 0; white-space: pre-wrap; color: var(--texto); }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--borde); }
+  th { color: var(--suave); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  td.mono, .mono { font-family: var(--mono); }
+  tr.invalida td { color: #FF9EA1; }
+  tr.noasig td { color: #F6C77A; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .nota { color: var(--suave); font-size: 12px; margin: 6px 0; }
+  #aviso { display: none; padding: 10px 14px; border-radius: 10px; background: #3D1418; color: #FFD0D2; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; }
+  #cargando { display: none; align-items: center; gap: 10px; color: var(--suave); }
+  .giro { width: 16px; height: 16px; border: 2px solid var(--borde); border-top-color: var(--ambar); border-radius: 50%; animation: gira 0.8s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  dialog { background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 12px; width: min(1100px, 94vw); padding: 16px; }
+  dialog::backdrop { background: #000A; }
+  dialog textarea { width: 100%; height: 320px; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; font-family: var(--mono); font-size: 12px; padding: 8px; }
+  .chip-l { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  @media (max-width: 1250px) { #centro { grid-template-columns: 260px 1fr; height: auto; } #filas, #pistasPanel { height: 640px; } #bitacora { grid-column: 1 / -1; height: 360px; } #etapas { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="marca"><b>✈ Simulador de operaciones aeroportuarias</b><span>Torre de control en tiempo real · ejecuta el programa de verdad y reproduce cada decisión</span></div>
+  <label class="control">Lenguaje<select id="selLenguaje"></select></label>
+  <label class="control">Escenario<select id="selEscenario"></select></label>
+  <button class="btn" id="btnDatos" title="Escribir o modificar pistas.csv y vuelos.csv">Datos propios…</button>
+  <button class="btn prim" id="btnEjecutar">▶ Ejecutar</button>
+</header>
+
+<main>
+  <div id="aviso"></div>
+  <div id="cargando"><div class="giro"></div><span id="cargandoTxt"></span></div>
+
+  <section class="panel" id="etapas" aria-label="Etapas del programa">
+    <div class="etapa" data-e="1"><div class="n">1</div><div class="nom">Lectura</div><div class="ms" id="ms1">—</div><div class="barra"><i id="b1"></i></div></div>
+    <div class="etapa" data-e="2"><div class="n">2</div><div class="nom">Validación</div><div class="ms" id="ms2">—</div><div class="barra"><i id="b2"></i></div></div>
+    <div class="etapa" data-e="3"><div class="n">3</div><div class="nom">Simulación</div><div class="ms" id="ms3">—</div><div class="barra"><i id="b3"></i></div></div>
+    <div class="etapa" data-e="4"><div class="n">4</div><div class="nom">Reportes</div><div class="ms" id="ms4">—</div><div class="barra"><i id="b4"></i></div></div>
+    <div class="etapa" data-e="5"><div class="n">5</div><div class="nom">Escritura</div><div class="ms" id="ms5">—</div><div class="barra"><i id="b5"></i></div></div>
+    <div id="ejec"><div>Elige lenguaje y escenario y pulsa <b>Ejecutar</b>.</div></div>
+  </section>
+
+  <section id="centro">
+    <div class="panel" id="filas">
+      <p class="titulo-panel">Filas de espera · operación · categoría · prioridad</p>
+      <div id="listaFilas"><p class="vacia">Cada fila agrupa vuelos que piden las mismas pistas; solo compite el primero (borde ámbar).</p></div>
+    </div>
+
+    <div class="panel" id="pistasPanel">
+      <div class="reloj">
+        <div id="hora">D1 --:--</div>
+        <div id="pasoInfo">sin ejecución</div>
+        <div class="mandos">
+          <button class="btn" id="bInicio" title="Volver al inicio">⏮</button>
+          <button class="btn" id="bAtras" title="Evento anterior">◁ evento</button>
+          <button class="btn" id="bPlay" title="Reproducir o pausar">▶ Reproducir</button>
+          <button class="btn" id="bAdelante" title="Siguiente evento">evento ▷</button>
+          <button class="btn" id="bFin" title="Ir al final">⏭</button>
+          <select id="selVel" title="Velocidad (minutos simulados por segundo)"></select>
+          <select id="selVentana" title="Ancho de la ventana de tiempo"></select>
+          <label title="Cuando nada ocurre, el reloj salta al siguiente evento, como el algoritmo"><input type="checkbox" id="chkSaltar" checked> saltar tiempos muertos</label>
+        </div>
+      </div>
+      <div id="narracion">La simulación avanza de evento en evento: un vuelo llega o una pista se libera.</div>
+      <div id="lienzoCaja"><canvas id="lienzo" height="300"></canvas></div>
+      <div class="leyenda"><span><i style="background:var(--aterriza)"></i>Aterrizaje</span><span><i style="background:var(--despega)"></i>Despegue</span><span><i style="background:transparent;border:2px solid var(--emerg)"></i>Emergencia</span><span><i style="background:transparent;border:1px dashed var(--suave)"></i>Reservada (aún ocupará la pista)</span><span>● llegada programada (hueco: aún no llega)</span></div>
+      <div id="estadoPistas"></div>
+    </div>
+
+    <div class="panel" id="bitacora">
+      <p class="titulo-panel">Bitácora de decisiones de la torre</p>
+      <div id="registro"><p class="vacia">Aquí aparece, paso a paso, por qué cada vuelo recibió su pista (RN03, RN05, RN06).</p></div>
+    </div>
+  </section>
+
+  <section class="panel" id="abajo">
+    <div class="pestanas" role="tablist">
+      <button class="pestana on" data-p="entrada">1 · Datos de entrada</button>
+      <button class="pestana" data-p="validacion">2 · Validación</button>
+      <button class="pestana" data-p="operaciones">3 · Operaciones asignadas</button>
+      <button class="pestana" data-p="reporte">4 · Reporte</button>
+      <button class="pestana" data-p="ejecucion">5 · Archivos y ejecución</button>
+    </div>
+    <div class="contenido" id="contenido"><p class="nota">Sin ejecución todavía.</p></div>
+  </section>
+</main>
+
+<dialog id="dlgDatos">
+  <p class="titulo-panel">Datos propios · se ejecutan con el programa real del lenguaje elegido</p>
+  <div class="dos">
+    <div><p class="nota">pistas.csv (id,longitud,uso,estado)</p><textarea id="txtPistas" spellcheck="false"></textarea></div>
+    <div><p class="nota">vuelos.csv (codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad)</p><textarea id="txtVuelos" spellcheck="false"></textarea></div>
+  </div>
+  <p class="nota">Prueba, por ejemplo, cambiar la prioridad de un vuelo a Emergencia, cerrar una pista o escribir una hora inválida.</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" id="btnCargarActual">Copiar los datos del escenario actual</button>
+    <button class="btn" id="btnCerrarDatos">Cancelar</button>
+    <button class="btn prim" id="btnEjecutarPropios">▶ Ejecutar con estos datos</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+// ============================================================== Reglas del contrato (solo para explicar)
+// Las asignaciones que se dibujan son las del programa real (operaciones.csv). Estas funciones repiten RN03 y
+// RN05 para explicar cada decisión, y se comprueba que lleguen exactamente a la misma salida.
+const CAT = { Ligero: { min: 1200, ocu: 2 }, Mediano: { min: 2000, ocu: 3 }, Pesado: { min: 2800, ocu: 4 } };
+const habilitada = (v, p) => p.estado === "Operativa" && (p.uso === "Mixta" || p.uso === v.operacion);
+const compatible = (v, p) => habilitada(v, p) && p.longitud >= CAT[v.categoria].min;
+const cmpTexto = (a, b) => (a < b ? -1 : a > b ? 1 : 0);          // unidades UTF-16, como compareTo de la JVM
+function prioridad(a, b) {                                         // RN05
+  return ((a.prioridad === "Emergencia" ? 0 : 1) - (b.prioridad === "Emergencia" ? 0 : 1))
+      || ((a.operacion === "Aterrizaje" ? 0 : 1) - (b.operacion === "Aterrizaje" ? 0 : 1))
+      || (a.prog - b.prog) || cmpTexto(a.codigo, b.codigo);
+}
+function porQueGana(g, r) {
+  if (g.prioridad !== r.prioridad) return "es emergencia";
+  if (g.operacion !== r.operacion) return "aterriza";
+  if (g.prog !== r.prog) return "llegó antes";
+  return "código menor";
+}
+function motivoNoAsignable(v, pistas) {                           // RN09
+  if (!pistas.some(p => habilitada(v, p))) return "sin pista habilitada para la operación";
+  if (!pistas.some(p => compatible(v, p))) return "sin pista con longitud suficiente";
+  return null;
+}
+
+// ============================================================== Utilidades
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dos = n => String(n).padStart(2, "0");
+const hora = m => `D${Math.floor(m / 1440) + 1} ${dos(Math.floor((m % 1440) / 60))}:${dos(m % 60)}`;
+const horaCorta = m => `${dos(Math.floor((m % 1440) / 60))}:${dos(m % 60)}`;
+const miles = n => n.toLocaleString("es-CO");
+const ms = ns => (ns / 1e6).toLocaleString("es-CO", { maximumFractionDigits: ns < 1e7 ? 2 : 1 }) + " ms";
+const jtrim = s => s.replace(/^[\u0000- ]+|[\u0000- ]+$/g, "");   // String.trim de la JVM
+const COLOR_L = { java: "var(--java)", scala: "var(--scala)", clojure: "var(--clojure)", python: "var(--python)" };
+function hasta(arr, x, clave) { let a = 0, b = arr.length; while (a < b) { const m = (a + b) >> 1; if (clave(arr[m]) <= x) a = m + 1; else b = m; } return a; }
+function lista(nombres) { return nombres.length <= 1 ? nombres.join("") : nombres.slice(0, -1).join(", ") + " y " + nombres[nombres.length - 1]; }
+
+function registros(texto) {          // líneas → registros (se salta el encabezado y las líneas vacías)
+  const lineas = texto.split("\n"), out = [];
+  for (let i = 1; i < lineas.length; i++) if (jtrim(lineas[i]) !== "") out.push({ linea: i + 1, campos: lineas[i].split(",").map(jtrim), crudo: lineas[i] });
+  return out;
+}
+function erroresCsv(texto) {
+  return texto.split("\n").slice(1).filter(l => l !== "").map(l => {
+    const a = l.indexOf(","), b = l.indexOf(",", a + 1);
+    return { archivo: l.slice(0, a), linea: +l.slice(a + 1, b), motivo: l.slice(b + 1) };
+  });
+}
+const aMinutos = t => { const [d, hm] = t.split(" "); const [h, m] = hm.split(":"); return (+d.slice(1) - 1) * 1440 + (+h) * 60 + (+m); };
+function operacionesCsv(texto) {
+  return texto.split("\n").slice(1).filter(l => l !== "").map(l => {
+    const c = l.split(",");
+    return { codigo: c[0], aerolinea: c[1], operacion: c[2], categoria: c[3], prioridad: c[4], pista: c[5], prog: aMinutos(c[6]), ini: aMinutos(c[7]), fin: aMinutos(c[8]), retraso: +c[9] };
+  });
+}
+
+// ============================================================== Modelo de una ejecución
+function construirModelo(d) {
+  const errores = erroresCsv(d.salida["errores.csv"]);
+  const malas = new Map(errores.map(e => [e.archivo + ":" + e.linea, e.motivo]));
+  const regP = registros(d.entrada.pistas), regV = registros(d.entrada.vuelos);
+  const pistas = regP.filter(r => !malas.has("pistas:" + r.linea)).map(r => ({ id: r.campos[0], longitud: +r.campos[1], uso: r.campos[2], estado: r.campos[3] }))
+                     .sort((a, b) => cmpTexto(a.id, b.id));
+  const vuelos = regV.filter(r => !malas.has("vuelos:" + r.linea)).map(r => {
+    const c = r.campos, [h, m] = c[6].split(":");
+    return { codigo: c[0], aerolinea: c[1], matricula: c[2], categoria: c[3], operacion: c[4], prioridad: c[7], prog: (+c[5] - 1) * 1440 + (+h) * 60 + (+m), linea: r.linea };
+  });
+  const noAsignables = [], asignables = [];
+  vuelos.forEach(v => { const m = motivoNoAsignable(v, pistas); if (m) noAsignables.push({ v, motivo: m }); else asignables.push(v); });
+  noAsignables.sort((a, b) => a.v.prog - b.v.prog || cmpTexto(a.v.codigo, b.v.codigo));
+  const operativas = pistas.filter(p => p.estado === "Operativa");
+  const traza = simularTraza(asignables, operativas);
+  const ops = operacionesCsv(d.salida["operaciones.csv"]);
+  const deTraza = traza.pasos.flatMap(p => p.asignaciones);
+  const coincide = deTraza.length === ops.length && deTraza.every((a, i) => a.v.codigo === ops[i].codigo && a.pista.id === ops[i].pista && a.ini === ops[i].ini && a.fin === ops[i].fin);
+  const porPista = new Map(pistas.map(p => [p.id, []]));
+  ops.forEach(o => porPista.get(o.pista) && porPista.get(o.pista).push(o));
+  const inicioDe = new Map(ops.map(o => [o.codigo, o.ini]));
+  traza.filas.forEach(f => { f.ini = f.vuelos.map(v => inicioDe.get(v.codigo) ?? Infinity); f.prog = f.vuelos.map(v => v.prog); });
+  const llegadas = vuelos.slice().sort((a, b) => a.prog - b.prog);
+  const t0 = traza.pasos.length ? traza.pasos[0].minuto : 0;
+  const t1 = traza.pasos.length ? traza.pasos[traza.pasos.length - 1].minuto : 0;
+  const fuera = new Set(noAsignables.map(n => n.v));
+  const lineaFuera = new Map(noAsignables.map(n => [n.v.linea, n.motivo]));
+  return { d, errores, malas, regP, regV, pistas, vuelos, noAsignables, asignables, operativas, traza, ops, coincide, porPista, llegadas, t0, t1, fuera, lineaFuera };
+}
+
+// La misma simulación que TorreControl (12 filas, primer pendiente, pista libre de menor id, RN05, salto al
+// siguiente evento), guardando en cada paso quién compitió y por qué ganó cada uno.
+function simularTraza(asignables, operativas) {
+  const grupos = new Map();
+  asignables.forEach(v => { const k = v.operacion + "|" + v.categoria + "|" + v.prioridad; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(v); });
+  const filas = [...grupos.entries()].map(([k, vs]) => ({ clave: k, vuelos: vs.sort((a, b) => a.prog - b.prog || cmpTexto(a.codigo, b.codigo)) }));
+  const orden = f => { const [op, cat, pr] = f.clave.split("|"); return (pr === "Emergencia" ? 0 : 6) + (op === "Aterrizaje" ? 0 : 3) + ["Ligero", "Mediano", "Pesado"].indexOf(cat); };
+  filas.sort((a, b) => orden(a) - orden(b));
+  const pasos = [];
+  if (!filas.length) return { filas, pasos };
+  const cab = filas.map(() => 0), libres = operativas.map(() => 0);
+  let minuto = Math.min(...filas.map(f => f.vuelos[0].prog));
+  const quedan = () => filas.some((f, i) => cab[i] < f.vuelos.length);
+  const pistaLibre = v => operativas.findIndex((p, j) => libres[j] <= minuto && compatible(v, p));
+  const porLlegada = asignables.slice().sort((a, b) => a.prog - b.prog || cmpTexto(a.codigo, b.codigo));
+  let llegada = 0;
+  for (let guarda = 0; guarda < 5e6; guarda++) {
+    const liberadas = operativas.filter((p, j) => libres[j] === minuto && minuto > 0).map(p => p.id);
+    const llegan = [];
+    while (llegada < porLlegada.length && porLlegada[llegada].prog <= minuto) llegan.push(porLlegada[llegada++]);
+    const asignaciones = [];
+    for (;;) {
+      const cands = [];
+      filas.forEach((f, i) => { if (cab[i] < f.vuelos.length) { const v = f.vuelos[cab[i]]; if (v.prog <= minuto) { const j = pistaLibre(v); if (j >= 0) cands.push({ i, j, v }); } } });
+      if (!cands.length) break;
+      cands.sort((a, b) => prioridad(a.v, b.v));
+      const g = cands[0], p = operativas[g.j], fin = minuto + CAT[g.v.categoria].ocu;
+      const ocupadasAntes = operativas.slice(0, g.j).filter((q, j) => compatible(g.v, q)).map(q => ({ id: q.id, hasta: libres[operativas.indexOf(q)] }));
+      asignaciones.push({ v: g.v, pista: p, ini: minuto, fin, rivales: cands.slice(1).map(c => ({ v: c.v, razon: porQueGana(g.v, c.v) })), ocupadasAntes });
+      libres[g.j] = fin; cab[g.i]++;
+    }
+    const esperan = [];
+    filas.forEach((f, i) => { if (cab[i] < f.vuelos.length) { const v = f.vuelos[cab[i]]; if (v.prog <= minuto) esperan.push({ v, compatibles: operativas.map((p, j) => ({ id: p.id, hasta: libres[j], ok: compatible(v, p) })).filter(x => x.ok) }); } });
+    const pend = filas.reduce((s, f, i) => s + Math.max(0, f.vuelos.length - cab[i]), 0);
+    pasos.push({ minuto, liberadas, llegan, asignaciones, esperan, pendientes: pend });
+    if (!asignaciones.length && !quedan()) break;
+    // siguiente evento: el menor minuto futuro en que se libera una pista o llega el primero de una fila
+    const futuros = libres.filter(t => t > minuto);
+    filas.forEach((f, i) => { if (cab[i] < f.vuelos.length && f.vuelos[cab[i]].prog > minuto) futuros.push(f.vuelos[cab[i]].prog); });
+    const siguiente = futuros.length ? Math.min(...futuros) : minuto;
+    if (siguiente === minuto) break;
+    minuto = siguiente;
+  }
+  return { filas, pasos };
+}
+
+// Texto de un paso para la bitácora (y la narración)
+function textoPaso(p, M) {
+  const lineas = [];
+  if (p.llegan.length) lineas.push({ c: "", t: `↓ Llega${p.llegan.length > 1 ? "n" : ""}: ${lista(p.llegan.slice(0, 6).map(v => v.codigo + (v.prioridad === "Emergencia" ? " (emergencia)" : "")))}${p.llegan.length > 6 ? ` y ${p.llegan.length - 6} más` : ""}` });
+  const fuera = M.noAsignables.filter(n => n.v.prog <= p.minuto && n.v.prog > (p.previo ?? -1));
+  fuera.slice(0, 3).forEach(n => lineas.push({ c: "fuera", t: `✗ ${n.v.codigo} (${n.v.categoria}, ${n.v.operacion.toLowerCase()}) no entra a la simulación: ${n.motivo}` }));
+  if (p.liberadas.length) lineas.push({ c: "", t: `◎ Se libera${p.liberadas.length > 1 ? "n" : ""} ${lista(p.liberadas)}` });
+  p.asignaciones.forEach(a => {
+    let t = `✓ <b>${a.v.codigo}</b>${a.v.prioridad === "Emergencia" ? " (emergencia)" : ""} → <b>${a.pista.id}</b>`;
+    const ocup = a.ocupadasAntes.filter(o => o.hasta > p.minuto);
+    t += ocup.length ? ` (${lista(ocup.map(o => `${o.id} ocupada hasta ${horaCorta(o.hasta)}`))})` : ` (la pista libre compatible de menor id)`;
+    if (a.rivales.length) {
+      const grupos = new Map();
+      a.rivales.forEach(r => { if (!grupos.has(r.razon)) grupos.set(r.razon, []); grupos.get(r.razon).push(r.v.codigo); });
+      t += " · gana a " + [...grupos.entries()].map(([razon, cods]) => `${lista(cods.slice(0, 3))}${cods.length > 3 ? ` y ${cods.length - 3} más` : ""} porque ${razon}`).join("; a ");
+    }
+    t += ` · hasta ${horaCorta(a.fin)}`;
+    lineas.push({ c: "asig", t });
+  });
+  p.esperan.slice(0, 4).forEach(e => {
+    const bloquea = p.asignaciones.filter(a => prioridad(e.v, a.v) < 0).map(a => a.v.codigo);
+    lineas.push({ c: "espera", t: `⏳ ${e.v.codigo}${e.v.prioridad === "Emergencia" ? " (emergencia)" : ""} espera: ${lista(e.compatibles.map(c => `${c.id} ocupada hasta ${horaCorta(c.hasta)}`))}${bloquea.length ? ` · no bloquea a ${lista(bloquea)}` : ""}` });
+  });
+  if (p.esperan.length > 4) lineas.push({ c: "espera", t: `⏳ y ${p.esperan.length - 4} filas más esperan pista` });
+  if (!p.asignaciones.length && !p.esperan.length && !p.pendientes) lineas.push({ c: "", t: "Fin: no quedan vuelos pendientes y el paso no asignó nada." });
+  else if (!p.asignaciones.length && !p.llegan.length && !p.liberadas.length) lineas.push({ c: "", t: "Sin cambios en este evento." });
+  return lineas;
+}
+
+// ============================================================== Estado de la vista
+const S = { info: null, M: null, t: 0, jugando: false, vel: 1, ventana: 30, ultimo: 0, pasoMostrado: -2, temporizadores: [], pestana: "entrada", etapa: 0 };
+const VELOCIDADES = [0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 240, 480, 1440, 2880];
+const VENTANAS = [20, 30, 60, 120, 240, 480, 1440, 4320];
+
+function iniciarSelectores() {
+  $("selVel").innerHTML = VELOCIDADES.map(v => `<option value="${v}">${v < 60 ? v + " min/s" : v < 1440 ? v / 60 + " h/s" : v / 1440 + " d/s"}</option>`).join("");
+  $("selVentana").innerHTML = VENTANAS.map(v => `<option value="${v}">ventana ${v < 60 ? v + " min" : v < 1440 ? v / 60 + " h" : v / 1440 + " d"}</option>`).join("");
+  $("selVel").value = "1"; $("selVentana").value = "30";
+}
+
+function cargarInfo() {
+  fetch("/api/info").then(r => r.json()).then(info => {
+    S.info = info;
+    $("selLenguaje").innerHTML = info.lenguajes.map(l => `<option value="${l.id}" ${l.disponible ? "" : "disabled"}>${esc(l.nombre)}${l.disponible ? "" : " · " + esc(l.nota)}</option>`).join("");
+    $("selEscenario").innerHTML = info.escenarios.map(e => `<option value="${e.id}" ${e.disponible ? "" : "disabled"}>${e.id} · ${esc(e.titulo)}${e.disponible ? "" : " (no generado)"}</option>`).join("");
+  }, () => mostrarAviso("No se pudo hablar con el servidor local. ¿Sigue abierto interfaz/servidor.py?"));
+}
+
+function mostrarAviso(t) { $("aviso").style.display = t ? "block" : "none"; $("aviso").textContent = t || ""; }
+function cargando(t) { $("cargando").style.display = t ? "flex" : "none"; $("cargandoTxt").textContent = t || ""; $("btnEjecutar").disabled = !!t; $("btnEjecutarPropios").disabled = !!t; }
+function cancelarGuia() { S.temporizadores.forEach(clearTimeout); S.temporizadores = []; }
+
+function ejecutar(cuerpo) {
+  cancelarGuia(); pausar(); mostrarAviso("");
+  const nombre = $("selLenguaje").selectedOptions[0].textContent;
+  cargando(`Ejecutando de verdad ${nombre} · ${cuerpo.escenario === "propio" ? "datos propios" : cuerpo.escenario} (si el código cambió, primero se construye el .jar)…`);
+  fetch("/api/ejecutar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) })
+    .then(r => r.json()).then(d => {
+      cargando("");
+      if (d.error) { mostrarAviso("ERROR: " + d.error + (d.construccion ? "\n\n" + d.construccion : "")); return; }
+      if (d.codigo !== 0) { mostrarAviso(`El programa terminó con código ${d.codigo}.\n${d.pantalla}${d.errorEstandar}`); return; }
+      S.M = construirModelo(d);
+      prepararVista();
+      recorridoGuiado();
+    }, () => { cargando(""); mostrarAviso("Se perdió la conexión con el servidor local."); });
+}
+
+// ============================================================== Etapas y ejecución
+function pintarEtapas() {
+  const d = S.M.d, ns = d.etapasNs;
+  const total = ns ? Object.values(ns).reduce((a, b) => a + b, 0) : 0;
+  ["lectura", "validacion", "simulacion", "reportes", "escritura"].forEach((e, k) => {
+    $("ms" + (k + 1)).textContent = ns ? ms(ns[e]) : "no medido (referencia)";
+    $("b" + (k + 1)).style.width = ns ? Math.max(2, 100 * ns[e] / total) + "%" : "0";
+  });
+  const proceso = d.segundos * 1000, sello = (ok, si, no) => ok === null || ok === undefined ? "" : `<span class="sello ${ok ? "ok" : "mal"}">${ok ? si : no}</span>`;
+  $("ejec").innerHTML = `<div><span class="chip-l" style="background:${COLOR_L[d.lenguaje]}"></span><b>${esc(d.nombreLenguaje)}</b> · ${esc(d.escenario === "propio" ? "datos propios" : d.escenario + " · " + d.titulo)}</div>
+    <div class="total">proceso completo: ${(proceso).toLocaleString("es-CO", { maximumFractionDigits: 0 })} ms${ns ? ` · etapas: ${ms(total)}` : ""}</div>
+    <div>${sello(d.coincideEsperado, "= salida esperada", "≠ salida esperada")}${sello(d.pantallaIgualReporte, "pantalla = reporte.txt", "pantalla ≠ reporte")}${sello(S.M.coincide, "explicación = salida real", "explicación ≠ salida real")}</div>`;
+}
+function marcarEtapa(n) {
+  S.etapa = n;
+  document.querySelectorAll(".etapa").forEach(el => { const k = +el.dataset.e; el.classList.toggle("activa", k === n); el.classList.toggle("hecha", k < n); });
+}
+
+// ============================================================== Recorrido guiado
+function recorridoGuiado() {
+  const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
+  marcarEtapa(1); abrirPestana("entrada");
+  narrar(`<b>1 · Lectura.</b> El programa leyó ${miles(M.regP.length)} registros de pistas y ${miles(M.regV.length)} de vuelos (${esc(M.d.rutas.pistas)}, ${esc(M.d.rutas.vuelos)}).`);
+  t(2200, () => {
+    marcarEtapa(2); abrirPestana("validacion");
+    narrar(`<b>2 · Validación.</b> ${miles(M.pistas.length)} pistas y ${miles(M.vuelos.length)} vuelos válidos; ${miles(M.errores.length)} registros con error van a errores.csv. ${M.noAsignables.length === 1 ? "1 vuelo no tiene ninguna pista posible (RN09)." : M.noAsignables.length ? miles(M.noAsignables.length) + " vuelos no tienen ninguna pista posible (RN09)." : ""}`);
+  });
+  t(5200, () => {
+    marcarEtapa(3); abrirPestana("operaciones");
+    narrar(`<b>3 · Simulación.</b> ${miles(M.asignables.length)} vuelos en ${M.traza.filas.length} filas y ${M.operativas.length} pistas operativas. Pulsa <b>evento ▷</b> para ir paso a paso.`);
+    irA(M.t0); reproducir();
+  });
+}
+function alTerminarSimulacion() {
+  if (S.etapa !== 3) return;
+  const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
+  t(900, () => { marcarEtapa(4); abrirPestana("reporte"); narrar(`<b>4 · Reportes.</b> Con las ${miles(M.ops.length)} operaciones se arma reporte.txt (RF08 a RF14), que además se imprime en pantalla.`); });
+  t(3600, () => { marcarEtapa(5); abrirPestana("ejecucion"); narrar(`<b>5 · Escritura.</b> Se escribieron operaciones.csv, errores.csv y reporte.txt en ${esc(M.d.rutas.salida)}/.`); });
+}
+
+// ============================================================== Reloj
+function prepararVista() {
+  const M = S.M, lapso = Math.max(1, M.t1 - M.t0);
+  const vel = VELOCIDADES.reduce((m, v) => Math.abs(Math.log(v / (lapso / 25))) < Math.abs(Math.log(m / (lapso / 25))) ? v : m, 1);
+  S.vel = vel; $("selVel").value = String(vel);
+  const ven = lapso <= 40 ? 30 : lapso <= 300 ? 120 : lapso <= 2000 ? 480 : 1440;
+  S.ventana = ven; $("selVentana").value = String(ven);
+  pintarEtapas(); S.pasoMostrado = -2; S.minutoPintado = null; $("registro").innerHTML = "";
+  irA(M.t0);
+}
+function irA(t) { if (!S.M) return; S.t = Math.max(S.M.t0, Math.min(S.M.t1, t)); S.ultimoPanel = 0; dibujarTodo(); }
+function reproducir() { if (!S.M) return; if (S.t >= S.M.t1) S.t = S.M.t0; S.jugando = true; S.ultimo = performance.now(); $("bPlay").textContent = "⏸ Pausar"; requestAnimationFrame(cuadro); }
+function pausar() { S.jugando = false; $("bPlay").textContent = "▶ Reproducir"; }
+function indicePaso(t) { return hasta(S.M.traza.pasos, t, p => p.minuto) - 1; }
+function cuadro(ahora) {
+  if (!S.jugando || !S.M) return;
+  const dt = Math.min(0.25, (ahora - S.ultimo) / 1000); S.ultimo = ahora;
+  let t = S.t + dt * S.vel;
+  if ($("chkSaltar").checked) {
+    const k = indicePaso(S.t), sig = S.M.traza.pasos[k + 1];
+    const ocupado = ocupante(S.t).some(o => o) || (S.M.traza.pasos[k] && S.M.traza.pasos[k].esperan.length);
+    if (sig && !ocupado && sig.minuto - S.t > Math.max(3, S.vel * 1.5)) { t = sig.minuto - Math.min(1, S.vel * 0.4); narrar(`⏩ No pasa nada hasta ${hora(sig.minuto)}: el reloj salta al siguiente evento, como el algoritmo.`); }
+  }
+  if (t >= S.M.t1) { S.t = S.M.t1; pausar(); dibujarTodo(); alTerminarSimulacion(); return; }
+  S.t = t; dibujarTodo(); requestAnimationFrame(cuadro);
+}
+function saltarEvento(dir) {
+  if (!S.M) return; cancelarGuia(); pausar();
+  const pasos = S.M.traza.pasos, k = indicePaso(S.t);
+  const destino = dir > 0 ? pasos[Math.min(pasos.length - 1, k + 1)] : pasos[Math.max(0, (S.t > (pasos[k] || {}).minuto ? k : k - 1))];
+  if (destino) irA(destino.minuto);
+  if (dir > 0 && destino === pasos[pasos.length - 1]) alTerminarSimulacion();
+}
+
+// ============================================================== Dibujo
+// Operación que ocupa cada pista en el minuto t (o null)
+function ocupante(t) {
+  return S.M.pistas.map(p => { const l = S.M.porPista.get(p.id) || [], o = l[hasta(l, t, x => x.ini) - 1]; return o && t < o.fin ? o : null; });
+}
+let COL = null, FUENTE = "";
+function dibujarTodo() {
+  if (!S.M) return;
+  if (!COL) { const cs = getComputedStyle(document.documentElement); COL = {}; ["--ambar", "--aterriza", "--despega", "--emerg", "--suave", "--tenue", "--texto", "--mono"].forEach(n => COL[n] = cs.getPropertyValue(n).trim()); FUENTE = getComputedStyle(document.body).fontFamily; }
+  $("hora").textContent = hora(Math.floor(S.t));
+  const k = indicePaso(S.t), pasos = S.M.traza.pasos;
+  $("pasoInfo").textContent = pasos.length ? `evento ${Math.max(0, k + 1)} de ${miles(pasos.length)} · ${miles(hasta(S.M.ops, S.t, o => o.ini))} de ${miles(S.M.ops.length)} operaciones asignadas` : "no hay vuelos asignables";
+  dibujarLienzo();
+  // los paneles de texto se actualizan como mucho 5 veces por segundo mientras se reproduce
+  const ahora = performance.now();
+  if (S.jugando && ahora - (S.ultimoPanel || 0) < 200) return;
+  S.ultimoPanel = ahora;
+  const minuto = Math.floor(S.t * 4) / 4;
+  if (minuto !== S.minutoPintado) { dibujarFilas(); dibujarEstadoPistas(); S.minutoPintado = minuto; }
+  if (k !== S.pasoMostrado) { dibujarBitacora(k); S.pasoMostrado = k; if (S.pestana === "operaciones") abrirPestana("operaciones"); }
+}
+
+function dibujarLienzo() {
+  const M = S.M, cv = $("lienzo"), dpr = window.devicePixelRatio || 1;
+  const ancho = cv.clientWidth, carriles = M.pistas.length, alto = 46 + 34 + carriles * 40 + 14;
+  if (cv.width !== Math.round(ancho * dpr) || cv.height !== Math.round(alto * dpr)) { cv.width = Math.round(ancho * dpr); cv.height = Math.round(alto * dpr); cv.style.height = alto + "px"; }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, ancho, alto);
+  const izq = 150, der = ancho - 10, W = S.ventana, a = S.t - W * 0.72, b = a + W;
+  const X = m => izq + (m - a) / W * (der - izq);
+  const css = n => COL[n];
+  // eje de tiempo
+  const paso = [1, 5, 15, 30, 60, 180, 360, 720, 1440].find(p => (der - izq) / (W / p) >= 60) || 1440;
+  g.font = "11px " + css("--mono"); g.textAlign = "center";
+  for (let m = Math.ceil(a / paso) * paso; m <= b; m += paso) {
+    const x = X(m); g.strokeStyle = "#1C3048"; g.beginPath(); g.moveTo(x, 18); g.lineTo(x, alto - 6); g.stroke();
+    g.fillStyle = css("--tenue"); g.fillText(paso >= 1440 ? `D${Math.floor(m / 1440) + 1}` : (m % 1440 === 0 ? hora(m) : horaCorta(m)), x, 12);
+  }
+  // marcas de los pasos del algoritmo
+  const pasos = M.traza.pasos;
+  for (let i = Math.max(0, hasta(pasos, a, p => p.minuto) - 1); i < pasos.length && pasos[i].minuto <= b; i++) {
+    const x = X(pasos[i].minuto); g.fillStyle = pasos[i].minuto <= S.t ? css("--ambar") : "#3A4F6A"; g.beginPath(); g.moveTo(x - 4, 18); g.lineTo(x + 4, 18); g.lineTo(x, 25); g.fill();
+  }
+  // llegadas
+  const yL = 46; g.textAlign = "left"; g.fillStyle = css("--suave"); g.font = "12px " + FUENTE; g.fillText("Llegadas", 12, yL + 4);
+  const li = M.llegadas; let ultimaEtiqueta = -1e9;
+  for (let i = hasta(li, a - 1, v => v.prog); i < li.length && li[i].prog <= b; i++) {
+    const v = li[i], x = X(v.prog), llego = v.prog <= S.t, fuera = M.fuera.has(v);
+    g.beginPath(); g.arc(x, yL, 5, 0, Math.PI * 2);
+    g.strokeStyle = fuera ? "#8892A0" : v.operacion === "Aterrizaje" ? css("--aterriza") : css("--despega");
+    g.fillStyle = g.strokeStyle; g.lineWidth = 2; if (llego) g.fill(); else g.stroke();
+    if (v.prioridad === "Emergencia") { g.strokeStyle = css("--emerg"); g.beginPath(); g.arc(x, yL, 8, 0, Math.PI * 2); g.stroke(); }
+    if (W <= 60 && llego && x - ultimaEtiqueta > 52) { g.fillStyle = css("--suave"); g.font = "10px " + css("--mono"); g.fillText(v.codigo, x - 4, yL - 10); ultimaEtiqueta = x; }
+  }
+  // pistas
+  const y0 = 46 + 34;
+  M.pistas.forEach((p, i) => {
+    const y = y0 + i * 40, cerrada = p.estado !== "Operativa";
+    g.fillStyle = cerrada ? "#101C2C" : "#0F2036"; g.fillRect(izq, y, der - izq, 30);
+    g.fillStyle = cerrada ? css("--tenue") : css("--texto"); g.font = "bold 13px " + css("--mono"); g.textAlign = "left"; g.fillText(p.id, 12, y + 13);
+    g.fillStyle = css("--tenue"); g.font = "11px " + FUENTE; g.fillText(`${p.uso} · ${miles(p.longitud)} m${cerrada ? " · cerrada" : ""}`, 12, y + 27);
+    if (cerrada) { g.strokeStyle = "#2A3B52"; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(izq, y + 15); g.lineTo(der, y + 15); g.stroke(); g.setLineDash([]); return; }
+    const lista_ = M.porPista.get(p.id) || [];
+    for (let j = Math.max(0, hasta(lista_, a - 5, o => o.ini) - 1); j < lista_.length && lista_[j].ini <= b; j++) {
+      const o = lista_[j]; if (o.ini > S.t) break;
+      const color = o.operacion === "Aterrizaje" ? css("--aterriza") : css("--despega");
+      const x1 = X(o.ini), x2 = X(o.fin), xt = X(Math.min(o.fin, S.t));
+      g.fillStyle = color; g.globalAlpha = 0.95; g.fillRect(x1, y + 2, Math.max(1, xt - x1), 26); g.globalAlpha = 1;
+      if (S.t < o.fin) { g.globalAlpha = 0.22; g.fillStyle = color; g.fillRect(xt, y + 2, x2 - xt, 26); g.globalAlpha = 1; g.strokeStyle = color; g.setLineDash([4, 3]); g.strokeRect(xt, y + 2.5, x2 - xt, 25); g.setLineDash([]); }
+      if (o.prioridad === "Emergencia") { g.strokeStyle = css("--emerg"); g.lineWidth = 2.5; g.strokeRect(x1 + 1, y + 2, x2 - x1 - 2, 26); g.lineWidth = 1; }
+      if (x2 - x1 > 46) { g.fillStyle = xt - x1 > 46 ? "#06111F" : css("--texto"); g.font = "bold 11px " + css("--mono"); g.textAlign = "left"; g.fillText(o.codigo, x1 + 5, y + 19); }
+    }
+  });
+  // ahora
+  const xa = X(S.t); g.strokeStyle = css("--ambar"); g.lineWidth = 2; g.beginPath(); g.moveTo(xa, 16); g.lineTo(xa, alto - 4); g.stroke(); g.lineWidth = 1;
+}
+
+function dibujarFilas() {
+  const M = S.M, t = S.t;
+  const html = M.traza.filas.map(f => {
+    const [op, cat, pr] = f.clave.split("|");
+    const asignados = hasta(f.ini, t, x => x), llegados = hasta(f.prog, t, x => x);
+    const esperando = f.vuelos.slice(asignados, Math.max(asignados, llegados));
+    const porLlegar = f.vuelos.length - Math.max(asignados, llegados);
+    const fichas = esperando.slice(0, 6).map((v, i) => `<span class="ficha ${i === 0 ? "cabeza" : ""} ${pr === "Emergencia" ? "emerg" : ""}" title="programado ${hora(v.prog)}">${esc(v.codigo)} ${horaCorta(v.prog)}</span>`).join("");
+    return `<div class="fila"><div class="cab"><b>${op} · ${cat}${pr === "Emergencia" ? " · <span style='color:var(--emerg)'>Emergencia</span>" : ""}</b><span>${esperando.length === 1 ? "1 espera" : esperando.length ? miles(esperando.length) + " esperan" : ""}</span></div>
+      <div class="fichas">${fichas || '<span class="vacia">nadie esperando</span>'}${esperando.length > 6 ? `<span class="vacia">+${miles(esperando.length - 6)}</span>` : ""}</div>
+      <div class="vacia">${porLlegar ? miles(porLlegar) + " por llegar" : "sin vuelos por llegar"} · ${miles(asignados)} asignado${asignados === 1 ? "" : "s"}</div></div>`;
+  }).join("");
+  $("listaFilas").innerHTML = html || '<p class="vacia">No hay vuelos asignables.</p>';
+}
+
+function dibujarEstadoPistas() {
+  const ocup = ocupante(S.t);
+  $("estadoPistas").innerHTML = S.M.pistas.map((p, i) => {
+    if (p.estado !== "Operativa") return `<div class="estPista cerrada"><b>${esc(p.id)}</b> · cerrada</div>`;
+    const o = ocup[i];
+    return `<div class="estPista ${o ? "ocupada" : ""}"><b>${esc(p.id)}</b> · ${o ? `${esc(o.codigo)} hasta ${horaCorta(o.fin)}` : "libre"}</div>`;
+  }).join("");
+}
+
+function dibujarBitacora(k) {
+  const M = S.M, pasos = M.traza.pasos, desde = Math.max(0, k - 80);
+  const html = [];
+  for (let i = desde; i <= k; i++) {
+    const p = pasos[i]; p.previo = i > 0 ? pasos[i - 1].minuto : -1;
+    const lineas = textoPaso(p, M);
+    html.push(`<div class="paso ${i === k ? "actual" : ""}"><h4>${hora(p.minuto)} · evento ${i + 1}</h4>${lineas.map(l => `<p class="${l.c}">${l.t}</p>`).join("")}</div>`);
+    if (i === k) narrar(`<b>${hora(p.minuto)}</b> · ${lineas.map(l => l.t).join(" · ")}`);
+  }
+  $("registro").innerHTML = html.join("") || '<p class="vacia">Aún no empieza la simulación.</p>';
+  $("registro").scrollTop = $("registro").scrollHeight;
+}
+function narrar(html) { $("narracion").innerHTML = html; }
+
+// ============================================================== Pestañas
+function abrirPestana(p) {
+  S.pestana = p;
+  document.querySelectorAll(".pestana").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  if (!S.M) return;
+  const M = S.M, d = M.d, c = $("contenido");
+  if (p === "entrada") {
+    const tablaReg = (regs, archivo, max) => `<table><tr><th>línea</th><th>registro</th><th>resultado</th></tr>${regs.slice(0, max).map(r => {
+      const mal = M.malas.get(archivo + ":" + r.linea), na = archivo === "vuelos" && !mal && M.lineaFuera.has(r.linea);
+      return `<tr class="${mal ? "invalida" : na ? "noasig" : ""}"><td class="mono">${r.linea}</td><td class="mono">${esc(r.crudo)}</td><td>${mal ? "✗ " + esc(mal) : na ? "válido · no asignable" : "✓ válido"}</td></tr>`; }).join("")}</table>${regs.length > max ? `<p class="nota">… y ${miles(regs.length - max)} registros más.</p>` : ""}`;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">${esc(d.rutas.pistas)} · ${miles(M.regP.length)} registros</p>${tablaReg(M.regP, "pistas", 50)}</div>
+      <div><p class="titulo-panel">${esc(d.rutas.vuelos)} · ${miles(M.regV.length)} registros</p>${tablaReg(M.regV, "vuelos", 200)}</div></div>`;
+  } else if (p === "validacion") {
+    const errP = M.errores.filter(e => e.archivo === "pistas").length, errV = M.errores.length - errP;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">RF03 · resultado de la validación</p>
+      <table><tr><th></th><th>registros</th><th>válidos</th><th>inválidos</th></tr><tr><td>Pistas</td><td>${miles(M.regP.length)}</td><td>${miles(M.pistas.length)}</td><td>${miles(errP)}</td></tr><tr><td>Vuelos</td><td>${miles(M.regV.length)}</td><td>${miles(M.vuelos.length)}</td><td>${miles(errV)}</td></tr></table>
+      <p class="nota">Cada registro se revisa en orden y se reporta solo su <b>primer</b> error. Un código repetido se detecta contra el «dueño»: el registro válido de línea más baja.</p>
+      <p class="titulo-panel" style="margin-top:12px">RF12 · no asignables (${miles(M.noAsignables.length)})</p>
+      <table><tr><th>vuelo</th><th>operación</th><th>categoría</th><th>motivo</th></tr>${M.noAsignables.slice(0, 200).map(n => `<tr class="noasig"><td class="mono">${esc(n.v.codigo)}</td><td>${n.v.operacion}</td><td>${n.v.categoria}</td><td>${esc(n.motivo)}</td></tr>`).join("") || "<tr><td colspan=4>Ninguno</td></tr>"}</table></div>
+      <div><p class="titulo-panel">errores.csv (${miles(M.errores.length)})</p><table><tr><th>archivo</th><th>línea</th><th>motivo</th></tr>${M.errores.slice(0, 300).map(e => `<tr class="invalida"><td>${esc(e.archivo)}</td><td class="mono">${e.linea}</td><td>${esc(e.motivo)}</td></tr>`).join("") || "<tr><td colspan=3>Sin errores</td></tr>"}</table>${M.errores.length > 300 ? `<p class="nota">… y ${miles(M.errores.length - 300)} más.</p>` : ""}</div></div>`;
+  } else if (p === "operaciones") {
+    const n = hasta(M.ops, S.t, o => o.ini), ult = M.ops.slice(Math.max(0, n - 300), n).reverse();
+    c.innerHTML = `<p class="titulo-panel">operaciones.csv · ${miles(n)} de ${miles(M.ops.length)} asignadas hasta ${hora(Math.floor(S.t))} · la más reciente arriba</p>
+      <table><tr><th>código</th><th>aerolínea</th><th>operación</th><th>categoría</th><th>prioridad</th><th>pista</th><th>programada</th><th>inicio</th><th>fin</th><th>retraso</th></tr>${ult.map(o => `<tr><td class="mono">${esc(o.codigo)}</td><td>${esc(o.aerolinea)}</td><td>${o.operacion}</td><td>${o.categoria}</td><td>${o.prioridad === "Emergencia" ? "<b style='color:var(--emerg)'>Emergencia</b>" : o.prioridad}</td><td class="mono">${esc(o.pista)}</td><td class="mono">${hora(o.prog)}</td><td class="mono">${hora(o.ini)}</td><td class="mono">${hora(o.fin)}</td><td class="mono">${o.retraso}${o.retraso > 15 ? " · retrasado" : ""}</td></tr>`).join("")}</table>`;
+  } else if (p === "reporte") {
+    c.innerHTML = `<p class="titulo-panel">reporte.txt · el mismo texto que el programa imprimió en pantalla</p><pre>${esc(d.salida["reporte.txt"])}</pre>`;
+  } else {
+    const ns = d.etapasNs, filas = ns ? Object.entries(ns).map(([e, v]) => `<tr><td>${e}</td><td class="mono">${ms(v)}</td></tr>`).join("") : "<tr><td colspan=2>La referencia en Python no mide etapas.</td></tr>";
+    const resto = ns ? d.segundos * 1e9 - Object.values(ns).reduce((a, b) => a + b, 0) : null;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">Comando ejecutado</p><pre>$ ${esc(d.comando)}</pre>
+      <p class="nota">Código de salida ${d.codigo} · proceso completo ${Math.round(d.segundos * 1000).toLocaleString("es-CO")} ms${resto !== null ? ` · arranque de la JVM y resto: ${ms(Math.max(0, resto))}` : ""}.</p>
+      <p class="titulo-panel" style="margin-top:12px">Tiempo de cada etapa (System.nanoTime, opción --medir)</p><table><tr><th>etapa</th><th>tiempo</th></tr>${filas}</table>
+      ${d.construccion ? `<p class="titulo-panel" style="margin-top:12px">Construcción previa del .jar</p><pre>${esc(d.construccion.slice(-3000))}</pre>` : ""}</div>
+      <div><p class="titulo-panel">Archivos escritos en ${esc(d.rutas.salida)}/</p><table><tr><th>archivo</th><th>tamaño</th></tr>${Object.entries(d.tamanos).map(([a, t]) => `<tr><td class="mono">${a}</td><td>${miles(t)} bytes</td></tr>`).join("")}</table>
+      <p class="titulo-panel" style="margin-top:12px">Comprobaciones</p><table>
+      <tr><td>Los 3 archivos son idénticos a la salida esperada del escenario</td><td>${d.coincideEsperado === null ? "no aplica" : d.coincideEsperado ? "✓ sí" : "✗ no"}</td></tr>
+      <tr><td>Lo que salió en pantalla es igual a reporte.txt</td><td>${d.pantallaIgualReporte ? "✓ sí" : "✗ no"}</td></tr>
+      <tr><td>La bitácora (RN03 y RN05 recalculadas aquí) llega a las mismas asignaciones que el programa</td><td>${M.coincide ? "✓ sí" : "✗ no"}</td></tr></table>
+      ${d.errorEstandar ? `<p class="titulo-panel" style="margin-top:12px">Salida de error</p><pre>${esc(d.errorEstandar)}</pre>` : ""}</div></div>`;
+  }
+}
+
+// ============================================================== Eventos
+document.querySelectorAll(".pestana").forEach(b => b.onclick = () => { cancelarGuia(); abrirPestana(b.dataset.p); });
+document.querySelectorAll(".etapa").forEach(el => el.onclick = () => {
+  if (!S.M) return; cancelarGuia(); const n = +el.dataset.e; marcarEtapa(n);
+  abrirPestana(["entrada", "validacion", "operaciones", "reporte", "ejecucion"][n - 1]);
+  if (n === 3) { irA(S.M.t0); reproducir(); }
+});
+$("btnEjecutar").onclick = () => ejecutar({ lenguaje: $("selLenguaje").value, escenario: $("selEscenario").value });
+$("bPlay").onclick = () => { cancelarGuia(); S.jugando ? pausar() : reproducir(); };
+$("bAdelante").onclick = () => saltarEvento(1);
+$("bAtras").onclick = () => saltarEvento(-1);
+$("bInicio").onclick = () => { if (S.M) { cancelarGuia(); pausar(); irA(S.M.t0); } };
+$("bFin").onclick = () => { if (S.M) { cancelarGuia(); pausar(); irA(S.M.t1); } };
+$("selVel").onchange = e => { S.vel = +e.target.value; };
+$("selVentana").onchange = e => { S.ventana = +e.target.value; dibujarTodo(); };
+$("btnDatos").onclick = () => { if (!$("txtVuelos").value) cargarActual(); $("dlgDatos").showModal(); };
+$("btnCerrarDatos").onclick = () => $("dlgDatos").close();
+function cargarActual() {
+  const e = $("selEscenario").value;
+  fetch("/api/entrada?escenario=" + encodeURIComponent(e)).then(r => r.json()).then(d => {
+    if (d.error) { mostrarAviso("ERROR: " + d.error); return; }
+    $("txtPistas").value = d.pistas; $("txtVuelos").value = d.vuelos;
+  }, () => mostrarAviso("No se pudo leer el escenario desde el servidor local."));
+}
+$("btnCargarActual").onclick = cargarActual;
+$("btnEjecutarPropios").onclick = () => { $("dlgDatos").close(); ejecutar({ lenguaje: $("selLenguaje").value, escenario: "propio", pistas: $("txtPistas").value, vuelos: $("txtVuelos").value }); };
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT" || !S.M) return;
+  if (e.key === " ") { e.preventDefault(); $("bPlay").click(); }
+  if (e.key === "ArrowRight") saltarEvento(1);
+  if (e.key === "ArrowLeft") saltarEvento(-1);
+});
+window.addEventListener("resize", () => dibujarTodo());
+iniciarSelectores(); cargarInfo();
+</script>
+</body>
+</html>

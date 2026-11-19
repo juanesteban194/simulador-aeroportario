@@ -6,6 +6,7 @@
 #  Uso: bash simular.sh <lenguaje> [escenario] [carpeta_salida]
 #       bash simular.sh <lenguaje> <pistas.csv> <vuelos.csv> [carpeta_salida]
 #       bash simular.sh todos [escenario]      los 4 lenguajes y compara sus salidas
+#       bash simular.sh interfaz               interfaz gráfica: ejecuta y reproduce la asignación de pistas
 #       bash simular.sh                        menú (solo en una terminal)
 #
 #  lenguaje:  java | scala | clojure | python   (python = implementación de referencia; no compite)
@@ -32,6 +33,7 @@ uso() {
 Uso: bash simular.sh <lenguaje> [escenario] [carpeta_salida]
      bash simular.sh <lenguaje> <pistas.csv> <vuelos.csv> [carpeta_salida]
      bash simular.sh todos [escenario]
+     bash simular.sh interfaz
   lenguaje:  java | scala | clojure | python
   escenario: $ESCENARIOS (por defecto E0)
 EOF
@@ -55,6 +57,7 @@ normalizar_lenguaje() {
     clojure | clj) echo clojure ;;
     python | py | referencia) echo python ;;
     todos | all) echo todos ;;
+    interfaz | gui) echo interfaz ;;
     *) fallar "lenguaje desconocido: $1 (opciones: $LENGUAJES todos)" ;;
   esac
 }
@@ -206,10 +209,13 @@ menu() {
   local l e
   echo "Simulador aeroportuario · elige qué ejecutar:"
   PS3="Número: "
-  select l in $LENGUAJES todos; do [ -n "$l" ] && break; done
+  select l in $LENGUAJES todos interfaz; do [ -n "$l" ] && break; done
   [ -n "${l:-}" ] || exit 2
-  printf 'Escenario (%s) [E0]: ' "$ESCENARIOS"
-  read -r e || e=""
+  e=""
+  if [ "$l" != interfaz ]; then
+    printf 'Escenario (%s) [E0]: ' "$ESCENARIOS"
+    read -r e || e=""
+  fi
   ELEGIDO_LENGUAJE="$l"
   ELEGIDO_ESCENARIO="${e:-E0}"
 }
@@ -224,6 +230,12 @@ fi
 case "$1" in -h | --help | ayuda) uso; exit 0 ;; esac
 LENGUAJE="$(normalizar_lenguaje "$1")" || exit 2
 shift
+
+if [ "$LENGUAJE" = interfaz ]; then
+  preparar python
+  echo "Abriendo la interfaz gráfica (servidor local; se cierra con Ctrl+C o con el botón de parar)..."
+  exec "$PY" "$RAIZ/interfaz/servidor.py" "$@"
+fi
 
 if [ "$LENGUAJE" = todos ]; then
   [ $# -le 1 ] || fallar "con 'todos' solo se indica el escenario"

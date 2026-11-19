@@ -469,6 +469,7 @@ bash simular.sh java                 # o scala, clojure, python (referencia); es
 bash simular.sh scala V1             # otro escenario: E0, V1, V2, V3, V4, C1, X1
 bash simular.sh todos V2             # los 4 lenguajes y compara sus salidas byte a byte
 bash simular.sh                      # menú interactivo
+bash simular.sh interfaz             # interfaz gráfica en tiempo real (navegador)
 
 # Verificar que las tres versiones producen la misma salida (construye los .jar)
 bash experimento/verificar.sh
@@ -491,6 +492,32 @@ En IntelliJ hay configuraciones compartidas (`.run/`): **Verificar equivalencia*
 («Simular · Java», «· Scala», «· Clojure», «· Python (referencia)», «· los 4 y comparar» y «· menú»), que
 se ejecutan con ▶. Las salidas quedan en `salida/<lenguaje>/<escenario>/`; para otro escenario se cambia
 *Script options* (por ejemplo `java V1`).
+
+### 10.1 La interfaz gráfica (para la demostración)
+
+`bash simular.sh interfaz` (o «Simular · interfaz gráfica (tiempo real)» en IntelliJ) abre una página que
+**ejecuta de verdad** el programa elegido y luego reproduce lo que hizo. Recorrido guiado:
+
+1. **Lectura:** cuántos registros se leyeron y la tabla de entrada, con las líneas inválidas marcadas.
+2. **Validación:** el resumen RF03, `errores.csv` y los no asignables (RN09).
+3. **Simulación:**
+   - un reloj que salta de evento en evento (los mismos minutos del algoritmo: en E0, 11 eventos);
+   - las pistas en una línea de tiempo;
+   - las 12 filas con el primer pendiente resaltado;
+   - una bitácora que explica cada decisión. Ejemplo: «CM304 (emergencia) espera: P01 ocupada hasta 08:03 · no
+     bloquea a AV103».
+4. **Reportes:** `reporte.txt`.
+5. **Escritura:** los archivos, el comando ejecutado, los tiempos de `--medir` y tres comprobaciones:
+   - salida = esperada;
+   - pantalla = `reporte.txt`;
+   - explicación = salida real.
+
+**Qué decir si preguntan cómo funciona:** el servidor local (`interfaz/servidor.py`, solo biblioteca estándar de
+Python) lanza el mismo `java -jar` del experimento con `--medir` y entrega a la página las entradas y las salidas.
+Lo que se dibuja son las asignaciones reales de `operaciones.csv`. Las explicaciones se recalculan en la página con
+RN03 y RN05, y la página comprueba que lleguen exactamente a las mismas asignaciones; si no, lo marca. Con «Datos
+propios» se pueden cambiar las entradas en vivo (por ejemplo, volver emergencia un vuelo) y ver la nueva
+asignación en cualquiera de los cuatro lenguajes.
 
 ## 11. Estructura del repositorio
 

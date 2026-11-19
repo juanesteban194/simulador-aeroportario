@@ -52,11 +52,26 @@ bash simular.sh scala V1                 # otro escenario: E0, V1, V2, V3, V4, C
 bash simular.sh clojure pistas.csv vuelos.csv salida/mia   # archivos propios
 bash simular.sh todos V2                 # los 4 lenguajes y compara sus salidas byte a byte
 bash simular.sh                          # menú interactivo
+bash simular.sh interfaz                 # interfaz gráfica en el navegador
 ```
+
+**Interfaz gráfica en tiempo real** (`bash simular.sh interfaz`, o «Simular · interfaz gráfica» en IntelliJ):
+abre en el navegador una torre de control que **ejecuta de verdad** el programa del lenguaje elegido (los mismos
+`.jar`, o la referencia en Python) sobre un escenario o sobre datos propios, y reproduce la ejecución:
+
+- **Las 5 etapas:** con sus tiempos reales de `--medir`.
+- **Las pistas:** en una línea de tiempo que avanza de evento en evento.
+- **Las filas de espera:** las de las 12 filas.
+- **La bitácora de decisiones:** por qué cada vuelo recibió su pista (RN03, RN05, RN06).
+- **Validación, reporte y archivos:** lo que produjo esa ejecución.
+
+Las asignaciones dibujadas son las de `operaciones.csv`. Las explicaciones se recalculan en la página y se comprueba
+que lleguen a las mismas asignaciones. El servidor (`interfaz/servidor.py`) solo usa la biblioteca estándar de
+Python y escucha en `127.0.0.1`.
 
 Las salidas quedan en `salida/<lenguaje>/<escenario>/`. En IntelliJ están las mismas opciones en la carpeta
 **Simulador** del selector de ejecución (Run): «Simular · Java», «· Scala», «· Clojure», «· Python (referencia)»,
-«· los 4 y comparar» y «· menú». Para otro escenario, cambie *Script options* (por ejemplo `java V1`).
+«· los 4 y comparar», «· interfaz gráfica (tiempo real)» y «· menú». Para otro escenario, cambie *Script options* (por ejemplo `java V1`).
 
 **El experimento:**
 
@@ -91,6 +106,7 @@ del anterior ([método de trabajo](docs/00_metodo_de_trabajo.md) · [registro de
 simulador-aeroportuario/
 ├── README.md
 ├── simular.sh       ejecuta el simulador en Java, Scala, Clojure o Python (y los 4 comparados)
+├── interfaz/        interfaz gráfica en tiempo real (servidor local en Python y página web)
 ├── .run/            configuraciones de ejecución de IntelliJ (Simulador y Verificar equivalencia)
 ├── docs/            método de trabajo, decisiones, requerimientos, contrato, experimento, criterios, informe
 ├── herramientas/    instalación del entorno
