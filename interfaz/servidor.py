@@ -25,6 +25,8 @@ from urllib.parse import parse_qs, urlparse
 
 RAIZ = Path(__file__).resolve().parent.parent
 PAGINA = RAIZ / "interfaz" / "index.html"
+# Tipografías incluidas en el repositorio (licencia SIL OFL 1.1): la página no depende de internet.
+FUENTES = {"/fuentes/inter.woff2": "inter.woff2", "/fuentes/jetbrains-mono.woff2": "jetbrains-mono.woff2"}
 SALIDA = RAIZ / "salida" / "interfaz"
 ARCHIVOS = ("operaciones.csv", "errores.csv", "reporte.txt")
 ETAPAS = ("lectura", "validacion", "simulacion", "reportes", "escritura")
@@ -214,6 +216,8 @@ class Manejador(BaseHTTPRequestHandler):
         ruta = urlparse(self.path)
         if ruta.path in ("/", "/index.html"):
             self.responder(200, PAGINA.read_bytes(), "text/html; charset=utf-8")
+        elif ruta.path in FUENTES:
+            self.responder(200, (RAIZ / "interfaz" / "fuentes" / FUENTES[ruta.path]).read_bytes(), "font/woff2")
         elif ruta.path == "/api/info":
             self.json(200, info())
         elif ruta.path == "/api/entrada":

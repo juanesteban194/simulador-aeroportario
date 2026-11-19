@@ -3,196 +3,277 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulador aeroportuario · Torre de control en tiempo real</title>
+<title>Torre de control · Simulador de operaciones aeroportuarias</title>
 <style>
+  @font-face { font-family: "Inter"; src: url(/fuentes/inter.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "JetBrains Mono"; src: url(/fuentes/jetbrains-mono.woff2) format("woff2"); font-weight: 100 800; font-display: swap; }
   :root {
-    --fondo: #0B1626; --panel: #13233A; --panel2: #1A2E4A; --borde: #26405F;
-    --texto: #E6EDF5; --suave: #9FB2C8; --tenue: #6F86A0;
-    --ambar: #F2B33D; --aterriza: #4C8DF6; --despega: #22B07D; --emerg: #FF5D62; --gris: #4A5D75;
+    --fondo: #F6F7F9; --tarjeta: #FFFFFF; --borde: #E4E7EC; --linea: #F0F2F5;
+    --texto: #101828; --texto2: #475467; --tenue: #98A2B3;
+    --primario: #101828; --acento: #F79009;
+    --aterriza: #2E90FA; --despega: #12B76A; --emerg: #F04438;
+    --ok-f: #ECFDF3; --ok: #067647; --mal-f: #FEF3F2; --mal: #B42318; --av-f: #FFFAEB; --av: #B54708;
     --java: #2A78D6; --scala: #EB6834; --clojure: #1BAF7A; --python: #C9A227;
-    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sombra: 0 1px 2px rgba(16, 24, 40, .05);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
-  button, select { font: inherit; color: inherit; }
-  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: #0E1C30; border-bottom: 1px solid var(--borde); flex-wrap: wrap; }
-  .marca { display: flex; flex-direction: column; margin-right: auto; }
-  .marca b { font-size: 17px; letter-spacing: .2px; }
-  .marca span { color: var(--suave); font-size: 12px; }
-  .control { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--suave); text-transform: uppercase; letter-spacing: .6px; }
-  select { background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 7px 10px; min-width: 170px; text-transform: none; letter-spacing: 0; font-size: 14px; }
-  .btn { background: var(--panel2); border: 1px solid var(--borde); border-radius: 8px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
-  .btn:hover { border-color: var(--suave); }
-  .btn:disabled { opacity: .45; cursor: default; }
-  .btn.prim { background: var(--ambar); color: #1B1300; border-color: var(--ambar); font-weight: 700; padding: 9px 18px; }
-  main { padding: 14px 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; }
-  .titulo-panel { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--suave); margin: 0 0 8px; }
-  /* Etapas */
-  #etapas { display: grid; grid-template-columns: repeat(5, 1fr) 1.15fr; gap: 10px; padding: 12px; }
-  .etapa { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: var(--fondo); transition: border-color .25s, background .25s; }
-  .etapa .n { color: var(--tenue); font-weight: 700; font-size: 12px; }
-  .etapa .nom { font-weight: 700; font-size: 15px; }
-  .etapa .ms { font-family: var(--mono); color: var(--suave); font-size: 12px; }
-  .etapa .barra { height: 4px; background: var(--panel2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-  .etapa .barra i { display: block; height: 100%; width: 0; background: var(--ambar); transition: width .6s; }
-  .etapa.activa { border-color: var(--ambar); background: #1E2A1C10; box-shadow: 0 0 0 1px var(--ambar) inset; }
-  .etapa.activa .n { color: var(--ambar); }
-  .etapa.hecha .n::after { content: " · lista"; color: var(--despega); }
-  #ejec { border: 1px dashed var(--borde); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--suave); display: flex; flex-direction: column; gap: 4px; }
-  #ejec .total { font-family: var(--mono); color: var(--texto); font-size: 14px; }
-  .sello { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-right: 4px; }
-  .ok { background: #12392B; color: #6EE0AE; } .mal { background: #3D1418; color: #FF9EA1; } .neutro { background: var(--panel2); color: var(--suave); }
-  /* Zona central */
-  #centro { display: grid; grid-template-columns: 300px 1fr 380px; gap: 14px; height: 680px; }
-  #centro > .panel { min-height: 0; }
-  #filas, #bitacora { padding: 12px; overflow: hidden; display: flex; flex-direction: column; }
-  #listaFilas { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-  .fila { background: var(--fondo); border: 1px solid var(--borde); border-radius: 9px; padding: 7px 9px; }
-  .fila .cab { display: flex; justify-content: space-between; font-size: 12px; color: var(--suave); }
-  .fila .cab b { color: var(--texto); font-weight: 600; }
-  .fila .fichas { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; min-height: 22px; }
-  .ficha { font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--panel2); border: 1px solid transparent; }
-  .ficha.cabeza { border-color: var(--ambar); color: #FFE2A6; }
-  .ficha.emerg { box-shadow: inset 3px 0 0 var(--emerg); }
-  .vacia { color: var(--tenue); font-size: 11px; }
-  #pistasPanel { padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-y: auto; }
-  .reloj { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  #hora { font-family: var(--mono); font-size: 34px; font-weight: 700; letter-spacing: 1px; color: var(--ambar); min-width: 190px; }
-  #pasoInfo { color: var(--suave); font-size: 12px; }
-  .mandos { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
-  .mandos select { min-width: 0; padding: 6px 8px; font-size: 13px; }
-  .mandos label { font-size: 12px; color: var(--suave); display: flex; align-items: center; gap: 4px; }
-  #narracion { background: var(--fondo); border-left: 3px solid var(--ambar); padding: 8px 12px; border-radius: 6px; min-height: 40px; font-size: 14px; }
-  #lienzoCaja { position: relative; width: 100%; }
-  canvas { display: block; width: 100%; border-radius: 8px; background: var(--fondo); }
-  #estadoPistas { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
-  .estPista { background: var(--fondo); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 9px; font-size: 12px; }
-  .estPista b { font-family: var(--mono); }
-  .estPista.ocupada { border-color: #3B5D86; }
-  .estPista.cerrada { opacity: .5; }
-  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--suave); }
-  .leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
-  #registro { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 13px; padding-right: 4px; }
-  .paso { border-left: 2px solid var(--borde); padding: 2px 0 2px 10px; }
-  .paso.actual { border-left-color: var(--ambar); }
-  .paso h4 { margin: 0 0 3px; font-family: var(--mono); font-size: 12px; color: var(--ambar); }
-  .paso p { margin: 2px 0; color: var(--suave); }
-  .paso p.asig { color: var(--texto); }
-  .paso p.espera { color: #F6C77A; }
-  .paso p.fuera { color: #FF9EA1; }
-  /* Pestañas */
-  #abajo { padding: 0; }
-  .pestanas { display: flex; gap: 2px; border-bottom: 1px solid var(--borde); padding: 6px 8px 0; flex-wrap: wrap; }
-  .pestana { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; cursor: pointer; color: var(--suave); }
-  .pestana.on { color: var(--texto); border-bottom-color: var(--ambar); }
-  .contenido { padding: 12px 14px; max-height: 360px; overflow: auto; }
-  pre { font-family: var(--mono); font-size: 12.5px; margin: 0; white-space: pre-wrap; color: var(--texto); }
-  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
-  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--borde); }
-  th { color: var(--suave); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
-  td.mono, .mono { font-family: var(--mono); }
-  tr.invalida td { color: #FF9EA1; }
-  tr.noasig td { color: #F6C77A; }
-  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .nota { color: var(--suave); font-size: 12px; margin: 6px 0; }
-  #aviso { display: none; padding: 10px 14px; border-radius: 10px; background: #3D1418; color: #FFD0D2; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; }
-  #cargando { display: none; align-items: center; gap: 10px; color: var(--suave); }
-  .giro { width: 16px; height: 16px; border: 2px solid var(--borde); border-top-color: var(--ambar); border-radius: 50%; animation: gira 0.8s linear infinite; }
+  html, body { margin: 0; }
+  body { background: var(--fondo); color: var(--texto); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11"; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+  .contenedor { max-width: 1360px; margin: 0 auto; padding: 0 32px; }
+
+  /* Barra superior */
+  .barra { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--borde); }
+  .barra-in { display: flex; align-items: center; gap: 24px; height: 68px; }
+  .marca { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--primario); display: grid; place-items: center; }
+  .marca-t { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+  .marca-s { color: var(--texto2); font-size: 12.5px; }
+  .acciones { display: flex; align-items: flex-end; gap: 10px; }
+  .campo { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--texto2); font-weight: 500; }
+  select { appearance: none; background: var(--tarjeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--borde); border-radius: 8px; padding: 7px 32px 7px 11px; font-size: 13.5px; box-shadow: var(--sombra); cursor: pointer; }
+  select:focus, .btn:focus-visible { outline: 2px solid #D0D5DD; outline-offset: 1px; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 7px 13px; font-size: 13.5px; font-weight: 500; cursor: pointer; box-shadow: var(--sombra); white-space: nowrap; }
+  .btn:hover { background: #F9FAFB; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.primario { background: var(--primario); border-color: var(--primario); color: #fff; }
+  .btn.primario:hover { background: #1D2939; }
+  .btn.icono { padding: 7px 9px; }
+  .grupo { display: inline-flex; border: 1px solid var(--borde); border-radius: 8px; overflow: hidden; box-shadow: var(--sombra); }
+  .grupo .btn { border: 0; border-radius: 0; box-shadow: none; border-right: 1px solid var(--borde); }
+  .grupo .btn:last-child { border-right: 0; }
+  .enlace { background: none; border: 0; color: var(--texto2); font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .enlace:hover { background: var(--linea); color: var(--texto); }
+
+  /* Estructura */
+  main { padding: 28px 0 56px; display: flex; flex-direction: column; gap: 20px; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; box-shadow: var(--sombra); }
+  .tarjeta-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 18px 22px 0; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--texto2); font-size: 13px; }
+  .tenue { color: var(--tenue); }
+  .alerta { display: none; padding: 12px 16px; border-radius: 10px; background: var(--mal-f); color: var(--mal); border: 1px solid #FECDCA; white-space: pre-wrap; font-size: 13px; }
+
+  /* Resumen y etapas */
+  #resumen { padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+  .resumen-cab { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; min-height: 28px; }
+  .ejecucion { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ejecucion b { font-weight: 600; }
+  .punto { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .pastillas { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pastilla { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 500; }
+  .pastilla.ok { background: var(--ok-f); color: var(--ok); }
+  .pastilla.mal { background: var(--mal-f); color: var(--mal); }
+  .pasos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); }
+  .pasos li { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; cursor: pointer; padding-right: 12px; }
+  .pasos li::before { content: ""; position: absolute; top: 13px; left: 34px; right: 8px; height: 2px; background: var(--linea); }
+  .pasos li:last-child::before { display: none; }
+  .pasos li.hecha::before { background: var(--primario); }
+  .circulo { position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 600; background: var(--tarjeta); border: 1.5px solid var(--borde); color: var(--texto2); margin-bottom: 8px; transition: all .25s; }
+  .pasos li.activa .circulo { background: var(--primario); border-color: var(--primario); color: #fff; box-shadow: 0 0 0 4px #EAECF0; }
+  .pasos li.hecha .circulo { background: var(--primario); border-color: var(--primario); color: #fff; }
+  .paso-nom { font-weight: 600; font-size: 13.5px; }
+  .paso-ms { color: var(--texto2); font-size: 12.5px; }
+  .nota-etapa { margin: 0; color: var(--texto2); font-size: 13.5px; min-height: 20px; }
+  .nota-etapa b { color: var(--texto); font-weight: 600; }
+
+  /* Simulación */
+  .rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; align-items: start; }
+  #simulacion { padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .sim-cab { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .reloj { font-size: 28px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .mandos { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mandos select { padding: 6px 30px 6px 10px; font-size: 13px; }
+  .interruptor { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--texto2); cursor: pointer; user-select: none; }
+  .interruptor input { appearance: none; width: 30px; height: 18px; border-radius: 99px; background: #D0D5DD; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .interruptor input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .interruptor input:checked { background: var(--primario); }
+  .interruptor input:checked::after { transform: translateX(12px); }
+  canvas { display: block; width: 100%; }
+  .vacio { border: 1px dashed var(--borde); border-radius: 12px; padding: 48px 32px; text-align: center; color: var(--texto2); }
+  .vacio h3 { margin: 0 0 6px; font-size: 17px; color: var(--texto); font-weight: 600; letter-spacing: -.01em; }
+  .vacio p { margin: 0 auto; max-width: 520px; }
+  .leyenda { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--texto2); }
+  .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .pistas-estado { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pista-e { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borde); border-radius: 8px; padding: 5px 10px; font-size: 12.5px; color: var(--texto2); }
+  .pista-e b { color: var(--texto); font-weight: 600; }
+  .pista-e .estado { width: 7px; height: 7px; border-radius: 50%; background: #D0D5DD; }
+  .pista-e.ocupada .estado { background: var(--acento); }
+  .pista-e.cerrada { opacity: .55; }
+
+  /* Evento actual */
+  #decision { display: flex; flex-direction: column; max-height: 640px; }
+  #decision .cuerpo { padding: 14px 22px 20px; overflow-y: auto; }
+  .ev-hora { font-size: 13px; color: var(--texto2); margin-bottom: 12px; }
+  .ev-hora b { color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ev-sec { padding: 12px 0; border-top: 1px solid var(--linea); }
+  .ev-sec:first-of-type { border-top: 0; padding-top: 0; }
+  .ev-tit { font-size: 12px; font-weight: 600; color: var(--texto2); margin-bottom: 8px; }
+  .ev-fila { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ev-item + .ev-item { margin-top: 10px; }
+  .ev-linea { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ev-razon { color: var(--texto2); font-size: 13px; margin-top: 3px; padding-left: 2px; }
+  .cod { font-family: var(--mono); font-size: 12.5px; font-weight: 500; background: var(--linea); border-radius: 6px; padding: 2px 7px; }
+  .cod.emerg { background: var(--mal-f); color: var(--mal); }
+  .pista { font-family: var(--mono); font-size: 12.5px; font-weight: 600; border: 1px solid var(--borde); border-radius: 6px; padding: 1px 7px; }
+  .flecha { color: var(--tenue); }
+  .hasta { margin-left: auto; color: var(--texto2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .etq { font-size: 11.5px; font-weight: 500; padding: 1px 8px; border-radius: 99px; }
+  .etq.rojo { background: var(--mal-f); color: var(--mal); }
+  .etq.ambar { background: var(--av-f); color: var(--av); }
+  .mas { color: var(--texto2); font-size: 12.5px; align-self: center; }
+  .ev-fin { color: var(--texto2); font-size: 13px; }
+  .hist { display: flex; flex-direction: column; }
+  .hist button { display: flex; gap: 12px; text-align: left; background: none; border: 0; border-top: 1px solid var(--linea); padding: 9px 0; cursor: pointer; font-size: 13px; color: var(--texto2); }
+  .hist button:first-child { border-top: 0; }
+  .hist button:hover { color: var(--texto); }
+  .hist button.actual { color: var(--texto); font-weight: 500; }
+  .hist .h { font-variant-numeric: tabular-nums; color: var(--texto); min-width: 76px; }
+
+  /* Filas de espera */
+  #filasCard { padding-bottom: 20px; }
+  .filas { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; padding: 14px 22px 0; }
+  .fila { border: 1px solid var(--borde); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .fila-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; }
+  .fila-cab b { font-weight: 600; }
+  .fichas { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; }
+  .ficha { font-family: var(--mono); font-size: 12px; padding: 2px 7px; border-radius: 6px; background: var(--linea); color: var(--texto2); }
+  .ficha.cabeza { background: var(--primario); color: #fff; }
+  .fila-pie { font-size: 12px; color: var(--tenue); }
+
+  /* Detalles */
+  .pestanas { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--borde); overflow-x: auto; }
+  .pestana { background: none; border: 0; border-bottom: 2px solid transparent; padding: 14px 10px 12px; cursor: pointer; color: var(--texto2); font-weight: 500; font-size: 13.5px; white-space: nowrap; }
+  .pestana:hover { color: var(--texto); }
+  .pestana.on { color: var(--texto); border-bottom-color: var(--primario); }
+  .contenido { padding: 18px 22px 22px; max-height: 440px; overflow: auto; }
+  .titulo-sec { font-size: 13px; font-weight: 600; margin: 0 0 10px; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { color: var(--texto2); font-weight: 500; font-size: 12px; position: sticky; top: 0; background: var(--tarjeta); border-bottom-color: var(--borde); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.invalida td:last-child { color: var(--mal); }
+  tr.noasig td:last-child { color: var(--av); }
+  pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; margin: 0; white-space: pre-wrap; background: #F9FAFB; border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
+  .nota { color: var(--texto2); font-size: 13px; margin: 10px 0 0; }
+
+  /* Datos propios */
+  dialog { border: 1px solid var(--borde); border-radius: 16px; padding: 24px; width: min(1080px, 94vw); box-shadow: 0 20px 48px rgba(16, 24, 40, .18); color: var(--texto); }
+  dialog::backdrop { background: rgba(16, 24, 40, .35); }
+  dialog h2 { font-size: 17px; margin-bottom: 4px; }
+  dialog textarea { width: 100%; height: 300px; border: 1px solid var(--borde); border-radius: 10px; font-family: var(--mono); font-size: 12.5px; padding: 12px; background: #FCFCFD; resize: vertical; }
+  dialog label { display: block; font-size: 12.5px; color: var(--texto2); font-weight: 500; margin: 16px 0 6px; }
+  .dlg-pie { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+  .giro { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: gira .8s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
-  dialog { background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 12px; width: min(1100px, 94vw); padding: 16px; }
-  dialog::backdrop { background: #000A; }
-  dialog textarea { width: 100%; height: 320px; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; font-family: var(--mono); font-size: 12px; padding: 8px; }
-  .chip-l { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
-  @media (max-width: 1250px) { #centro { grid-template-columns: 260px 1fr; height: auto; } #filas, #pistasPanel { height: 640px; } #bitacora { grid-column: 1 / -1; height: 360px; } #etapas { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1120px) { .rejilla { grid-template-columns: 1fr; } #decision { max-height: 420px; } .dos { grid-template-columns: 1fr; } .barra-in { height: auto; padding: 12px 0; flex-wrap: wrap; } }
 </style>
 </head>
 <body>
-<header>
-  <div class="marca"><b>✈ Simulador de operaciones aeroportuarias</b><span>Torre de control en tiempo real · ejecuta el programa de verdad y reproduce cada decisión</span></div>
-  <label class="control">Lenguaje<select id="selLenguaje"></select></label>
-  <label class="control">Escenario<select id="selEscenario"></select></label>
-  <button class="btn" id="btnDatos" title="Escribir o modificar pistas.csv y vuelos.csv">Datos propios…</button>
-  <button class="btn prim" id="btnEjecutar">▶ Ejecutar</button>
+<header class="barra">
+  <div class="contenedor barra-in">
+    <div class="marca">
+      <div class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
+      <div><div class="marca-t">Torre de control</div><div class="marca-s">Simulador de operaciones aeroportuarias</div></div>
+    </div>
+    <div class="acciones">
+      <label class="campo">Lenguaje<select id="selLenguaje"></select></label>
+      <label class="campo">Escenario<select id="selEscenario"></select></label>
+      <button class="btn" id="btnDatos">Datos propios</button>
+      <button class="btn primario" id="btnEjecutar"><span id="btnEjecutarTxt">Ejecutar</span></button>
+    </div>
+  </div>
 </header>
 
-<main>
-  <div id="aviso"></div>
-  <div id="cargando"><div class="giro"></div><span id="cargandoTxt"></span></div>
+<main class="contenedor">
+  <div id="aviso" class="alerta" role="alert"></div>
 
-  <section class="panel" id="etapas" aria-label="Etapas del programa">
-    <div class="etapa" data-e="1"><div class="n">1</div><div class="nom">Lectura</div><div class="ms" id="ms1">—</div><div class="barra"><i id="b1"></i></div></div>
-    <div class="etapa" data-e="2"><div class="n">2</div><div class="nom">Validación</div><div class="ms" id="ms2">—</div><div class="barra"><i id="b2"></i></div></div>
-    <div class="etapa" data-e="3"><div class="n">3</div><div class="nom">Simulación</div><div class="ms" id="ms3">—</div><div class="barra"><i id="b3"></i></div></div>
-    <div class="etapa" data-e="4"><div class="n">4</div><div class="nom">Reportes</div><div class="ms" id="ms4">—</div><div class="barra"><i id="b4"></i></div></div>
-    <div class="etapa" data-e="5"><div class="n">5</div><div class="nom">Escritura</div><div class="ms" id="ms5">—</div><div class="barra"><i id="b5"></i></div></div>
-    <div id="ejec"><div>Elige lenguaje y escenario y pulsa <b>Ejecutar</b>.</div></div>
+  <section class="tarjeta" id="resumen" aria-label="Ejecución">
+    <div class="resumen-cab">
+      <div class="ejecucion" id="ejecucion"><span class="sub">Elige un lenguaje y un escenario, y pulsa <b>Ejecutar</b>. Se ejecuta el programa real y luego se reproduce paso a paso.</span></div>
+      <div class="pastillas" id="pastillas"></div>
+    </div>
+    <ol class="pasos" id="etapas">
+      <li data-e="1"><span class="circulo">1</span><span class="paso-nom">Lectura</span><span class="paso-ms num" id="ms1">—</span></li>
+      <li data-e="2"><span class="circulo">2</span><span class="paso-nom">Validación</span><span class="paso-ms num" id="ms2">—</span></li>
+      <li data-e="3"><span class="circulo">3</span><span class="paso-nom">Simulación</span><span class="paso-ms num" id="ms3">—</span></li>
+      <li data-e="4"><span class="circulo">4</span><span class="paso-nom">Reportes</span><span class="paso-ms num" id="ms4">—</span></li>
+      <li data-e="5"><span class="circulo">5</span><span class="paso-nom">Escritura</span><span class="paso-ms num" id="ms5">—</span></li>
+    </ol>
+    <p class="nota-etapa" id="notaEtapa"></p>
   </section>
 
-  <section id="centro">
-    <div class="panel" id="filas">
-      <p class="titulo-panel">Filas de espera · operación · categoría · prioridad</p>
-      <div id="listaFilas"><p class="vacia">Cada fila agrupa vuelos que piden las mismas pistas; solo compite el primero (borde ámbar).</p></div>
-    </div>
-
-    <div class="panel" id="pistasPanel">
-      <div class="reloj">
-        <div id="hora">D1 --:--</div>
-        <div id="pasoInfo">sin ejecución</div>
+  <div class="rejilla">
+    <section class="tarjeta" id="simulacion" aria-label="Simulación">
+      <div class="sim-cab">
+        <div><div class="reloj" id="hora">—</div><div class="sub" id="pasoInfo">Sin ejecución</div></div>
         <div class="mandos">
-          <button class="btn" id="bInicio" title="Volver al inicio">⏮</button>
-          <button class="btn" id="bAtras" title="Evento anterior">◁ evento</button>
-          <button class="btn" id="bPlay" title="Reproducir o pausar">▶ Reproducir</button>
-          <button class="btn" id="bAdelante" title="Siguiente evento">evento ▷</button>
-          <button class="btn" id="bFin" title="Ir al final">⏭</button>
-          <select id="selVel" title="Velocidad (minutos simulados por segundo)"></select>
-          <select id="selVentana" title="Ancho de la ventana de tiempo"></select>
-          <label title="Cuando nada ocurre, el reloj salta al siguiente evento, como el algoritmo"><input type="checkbox" id="chkSaltar" checked> saltar tiempos muertos</label>
+          <div class="grupo">
+            <button class="btn icono" id="bInicio" title="Inicio"></button>
+            <button class="btn icono" id="bAtras" title="Evento anterior (←)"></button>
+            <button class="btn" id="bPlay" title="Reproducir o pausar (espacio)"></button>
+            <button class="btn icono" id="bAdelante" title="Siguiente evento (→)"></button>
+            <button class="btn icono" id="bFin" title="Final"></button>
+          </div>
+          <select id="selVel" title="Velocidad"></select>
+          <select id="selVentana" title="Ventana de tiempo visible"></select>
         </div>
       </div>
-      <div id="narracion">La simulación avanza de evento en evento: un vuelo llega o una pista se libera.</div>
-      <div id="lienzoCaja"><canvas id="lienzo" height="300"></canvas></div>
-      <div class="leyenda"><span><i style="background:var(--aterriza)"></i>Aterrizaje</span><span><i style="background:var(--despega)"></i>Despegue</span><span><i style="background:transparent;border:2px solid var(--emerg)"></i>Emergencia</span><span><i style="background:transparent;border:1px dashed var(--suave)"></i>Reservada (aún ocupará la pista)</span><span>● llegada programada (hueco: aún no llega)</span></div>
-      <div id="estadoPistas"></div>
-    </div>
+      <div class="vacio" id="vacio"><h3>La simulación aparecerá aquí</h3><p>Verás cada pista en una línea de tiempo, los vuelos que llegan y, a la derecha, por qué la torre asigna cada pista. El reloj avanza de evento en evento, como el algoritmo.</p></div>
+      <canvas id="lienzo" hidden></canvas>
+      <div class="leyenda" id="leyenda" hidden><span><i style="background:var(--aterriza)"></i>Aterrizaje</span><span><i style="background:var(--despega)"></i>Despegue</span><span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--emerg)"></i>Emergencia</span><span><i style="background:#E4E7EC"></i>Reservada</span><label class="interruptor" style="margin-left:auto"><input type="checkbox" id="chkSaltar" checked>Saltar tiempos sin eventos</label></div>
+      <div class="pistas-estado" id="estadoPistas"></div>
+    </section>
 
-    <div class="panel" id="bitacora">
-      <p class="titulo-panel">Bitácora de decisiones de la torre</p>
-      <div id="registro"><p class="vacia">Aquí aparece, paso a paso, por qué cada vuelo recibió su pista (RN03, RN05, RN06).</p></div>
-    </div>
+    <aside class="tarjeta" id="decision" aria-label="Decisiones de la torre">
+      <div class="tarjeta-cab"><h2 id="decisionTitulo">Evento actual</h2><button class="enlace" id="btnHistorial">Ver historial</button></div>
+      <div class="cuerpo" id="decisionCuerpo"><p class="sub">Aquí se explica cada decisión: quién llega, qué pista se libera, quién recibe pista y por qué, y quién espera.</p></div>
+    </aside>
+  </div>
+
+  <section class="tarjeta" id="filasCard" aria-label="Filas de espera">
+    <div class="tarjeta-cab"><h2>Filas de espera</h2><span class="sub">Una fila por operación, categoría y prioridad. Solo compite el primero de cada fila.</span></div>
+    <div class="filas" id="listaFilas"><p class="sub">Sin ejecución.</p></div>
   </section>
 
-  <section class="panel" id="abajo">
+  <section class="tarjeta" aria-label="Detalles">
     <div class="pestanas" role="tablist">
-      <button class="pestana on" data-p="entrada">1 · Datos de entrada</button>
-      <button class="pestana" data-p="validacion">2 · Validación</button>
-      <button class="pestana" data-p="operaciones">3 · Operaciones asignadas</button>
-      <button class="pestana" data-p="reporte">4 · Reporte</button>
-      <button class="pestana" data-p="ejecucion">5 · Archivos y ejecución</button>
+      <button class="pestana on" data-p="entrada">Datos de entrada</button>
+      <button class="pestana" data-p="validacion">Validación</button>
+      <button class="pestana" data-p="operaciones">Operaciones</button>
+      <button class="pestana" data-p="reporte">Reporte</button>
+      <button class="pestana" data-p="ejecucion">Archivos y ejecución</button>
     </div>
-    <div class="contenido" id="contenido"><p class="nota">Sin ejecución todavía.</p></div>
+    <div class="contenido" id="contenido"><p class="sub">Sin ejecución todavía.</p></div>
   </section>
 </main>
 
 <dialog id="dlgDatos">
-  <p class="titulo-panel">Datos propios · se ejecutan con el programa real del lenguaje elegido</p>
+  <h2>Datos propios</h2>
+  <p class="sub">Se ejecutan con el programa real del lenguaje elegido. Prueba cambiar una prioridad a Emergencia, cerrar una pista o escribir una hora inválida.</p>
   <div class="dos">
-    <div><p class="nota">pistas.csv (id,longitud,uso,estado)</p><textarea id="txtPistas" spellcheck="false"></textarea></div>
-    <div><p class="nota">vuelos.csv (codigo,aerolinea,matricula,categoria,operacion,dia,hora,prioridad)</p><textarea id="txtVuelos" spellcheck="false"></textarea></div>
+    <div><label for="txtPistas">pistas.csv · id, longitud, uso, estado</label><textarea id="txtPistas" spellcheck="false"></textarea></div>
+    <div><label for="txtVuelos">vuelos.csv · código, aerolínea, matrícula, categoría, operación, día, hora, prioridad</label><textarea id="txtVuelos" spellcheck="false"></textarea></div>
   </div>
-  <p class="nota">Prueba, por ejemplo, cambiar la prioridad de un vuelo a Emergencia, cerrar una pista o escribir una hora inválida.</p>
-  <div style="display:flex;gap:8px;justify-content:flex-end">
-    <button class="btn" id="btnCargarActual">Copiar los datos del escenario actual</button>
+  <div class="dlg-pie">
+    <button class="btn" id="btnCargarActual" style="margin-right:auto">Cargar el escenario seleccionado</button>
     <button class="btn" id="btnCerrarDatos">Cancelar</button>
-    <button class="btn prim" id="btnEjecutarPropios">▶ Ejecutar con estos datos</button>
+    <button class="btn primario" id="btnEjecutarPropios">Ejecutar con estos datos</button>
   </div>
 </dialog>
 
 <script>
 "use strict";
 // ============================================================== Reglas del contrato (solo para explicar)
-// Las asignaciones que se dibujan son las del programa real (operaciones.csv). Estas funciones repiten RN03 y
-// RN05 para explicar cada decisión, y se comprueba que lleguen exactamente a la misma salida.
+// Lo que se dibuja son las asignaciones del programa real (operaciones.csv). Estas funciones repiten RN03 y RN05
+// para explicar cada decisión, y la página comprueba que lleguen exactamente a la misma salida.
 const CAT = { Ligero: { min: 1200, ocu: 2 }, Mediano: { min: 2000, ocu: 3 }, Pesado: { min: 2800, ocu: 4 } };
 const habilitada = (v, p) => p.estado === "Operativa" && (p.uso === "Mixta" || p.uso === v.operacion);
 const compatible = (v, p) => habilitada(v, p) && p.longitud >= CAT[v.categoria].min;
@@ -223,9 +304,21 @@ const horaCorta = m => `${dos(Math.floor((m % 1440) / 60))}:${dos(m % 60)}`;
 const miles = n => n.toLocaleString("es-CO");
 const ms = ns => (ns / 1e6).toLocaleString("es-CO", { maximumFractionDigits: ns < 1e7 ? 2 : 1 }) + " ms";
 const jtrim = s => s.replace(/^[\u0000- ]+|[\u0000- ]+$/g, "");   // String.trim de la JVM
+const plural = (n, uno, varios) => `${miles(n)} ${n === 1 ? uno : varios}`;
+const mayuscula = s => s.charAt(0).toUpperCase() + s.slice(1);
 const COLOR_L = { java: "var(--java)", scala: "var(--scala)", clojure: "var(--clojure)", python: "var(--python)" };
 function hasta(arr, x, clave) { let a = 0, b = arr.length; while (a < b) { const m = (a + b) >> 1; if (clave(arr[m]) <= x) a = m + 1; else b = m; } return a; }
 function lista(nombres) { return nombres.length <= 1 ? nombres.join("") : nombres.slice(0, -1).join(", ") + " y " + nombres[nombres.length - 1]; }
+const ICONO = {
+  inicio: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20 9 12l10-8v16z"/><path d="M5 19V5"/></svg>',
+  atras: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+  adelante: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+  fin: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 4 10 8-10 8V4z"/><path d="M19 5v14"/></svg>',
+  play: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>',
+  pausa: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  ok: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  no: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+};
 
 function registros(texto) {          // líneas → registros (se salta el encabezado y las líneas vacías)
   const lineas = texto.split("\n"), out = [];
@@ -304,7 +397,7 @@ function simularTraza(asignables, operativas) {
       if (!cands.length) break;
       cands.sort((a, b) => prioridad(a.v, b.v));
       const g = cands[0], p = operativas[g.j], fin = minuto + CAT[g.v.categoria].ocu;
-      const ocupadasAntes = operativas.slice(0, g.j).filter((q, j) => compatible(g.v, q)).map(q => ({ id: q.id, hasta: libres[operativas.indexOf(q)] }));
+      const ocupadasAntes = operativas.slice(0, g.j).filter(q => compatible(g.v, q)).map(q => ({ id: q.id, hasta: libres[operativas.indexOf(q)] }));
       asignaciones.push({ v: g.v, pista: p, ini: minuto, fin, rivales: cands.slice(1).map(c => ({ v: c.v, razon: porQueGana(g.v, c.v) })), ocupadasAntes });
       libres[g.j] = fin; cab[g.i]++;
     }
@@ -323,127 +416,109 @@ function simularTraza(asignables, operativas) {
   return { filas, pasos };
 }
 
-// Texto de un paso para la bitácora (y la narración)
-function textoPaso(p, M) {
-  const lineas = [];
-  if (p.llegan.length) lineas.push({ c: "", t: `↓ Llega${p.llegan.length > 1 ? "n" : ""}: ${lista(p.llegan.slice(0, 6).map(v => v.codigo + (v.prioridad === "Emergencia" ? " (emergencia)" : "")))}${p.llegan.length > 6 ? ` y ${p.llegan.length - 6} más` : ""}` });
-  const fuera = M.noAsignables.filter(n => n.v.prog <= p.minuto && n.v.prog > (p.previo ?? -1));
-  fuera.slice(0, 3).forEach(n => lineas.push({ c: "fuera", t: `✗ ${n.v.codigo} (${n.v.categoria}, ${n.v.operacion.toLowerCase()}) no entra a la simulación: ${n.motivo}` }));
-  if (p.liberadas.length) lineas.push({ c: "", t: `◎ Se libera${p.liberadas.length > 1 ? "n" : ""} ${lista(p.liberadas)}` });
-  p.asignaciones.forEach(a => {
-    let t = `✓ <b>${a.v.codigo}</b>${a.v.prioridad === "Emergencia" ? " (emergencia)" : ""} → <b>${a.pista.id}</b>`;
-    const ocup = a.ocupadasAntes.filter(o => o.hasta > p.minuto);
-    t += ocup.length ? ` (${lista(ocup.map(o => `${o.id} ocupada hasta ${horaCorta(o.hasta)}`))})` : ` (la pista libre compatible de menor id)`;
-    if (a.rivales.length) {
-      const grupos = new Map();
-      a.rivales.forEach(r => { if (!grupos.has(r.razon)) grupos.set(r.razon, []); grupos.get(r.razon).push(r.v.codigo); });
-      t += " · gana a " + [...grupos.entries()].map(([razon, cods]) => `${lista(cods.slice(0, 3))}${cods.length > 3 ? ` y ${cods.length - 3} más` : ""} porque ${razon}`).join("; a ");
-    }
-    t += ` · hasta ${horaCorta(a.fin)}`;
-    lineas.push({ c: "asig", t });
-  });
-  p.esperan.slice(0, 4).forEach(e => {
-    const bloquea = p.asignaciones.filter(a => prioridad(e.v, a.v) < 0).map(a => a.v.codigo);
-    lineas.push({ c: "espera", t: `⏳ ${e.v.codigo}${e.v.prioridad === "Emergencia" ? " (emergencia)" : ""} espera: ${lista(e.compatibles.map(c => `${c.id} ocupada hasta ${horaCorta(c.hasta)}`))}${bloquea.length ? ` · no bloquea a ${lista(bloquea)}` : ""}` });
-  });
-  if (p.esperan.length > 4) lineas.push({ c: "espera", t: `⏳ y ${p.esperan.length - 4} filas más esperan pista` });
-  if (!p.asignaciones.length && !p.esperan.length && !p.pendientes) lineas.push({ c: "", t: "Fin: no quedan vuelos pendientes y el paso no asignó nada." });
-  else if (!p.asignaciones.length && !p.llegan.length && !p.liberadas.length) lineas.push({ c: "", t: "Sin cambios en este evento." });
-  return lineas;
-}
-
 // ============================================================== Estado de la vista
-const S = { info: null, M: null, t: 0, jugando: false, vel: 1, ventana: 30, ultimo: 0, pasoMostrado: -2, temporizadores: [], pestana: "entrada", etapa: 0 };
+const S = { info: null, M: null, t: 0, jugando: false, vel: 1, ventana: 30, ultimo: 0, pasoMostrado: -2, temporizadores: [], pestana: "entrada", etapa: 0, historial: false, mensaje: null };
 const VELOCIDADES = [0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 240, 480, 1440, 2880];
 const VENTANAS = [20, 30, 60, 120, 240, 480, 1440, 4320];
+const fmtVel = v => v < 60 ? `${String(v).replace(".", ",")} min/s` : v < 1440 ? `${v / 60} h/s` : `${v / 1440} d/s`;
+const fmtVen = v => v < 60 ? `${v} min` : v < 1440 ? `${v / 60} h` : `${v / 1440} d`;
 
-function iniciarSelectores() {
-  $("selVel").innerHTML = VELOCIDADES.map(v => `<option value="${v}">${v < 60 ? v + " min/s" : v < 1440 ? v / 60 + " h/s" : v / 1440 + " d/s"}</option>`).join("");
-  $("selVentana").innerHTML = VENTANAS.map(v => `<option value="${v}">ventana ${v < 60 ? v + " min" : v < 1440 ? v / 60 + " h" : v / 1440 + " d"}</option>`).join("");
+function iniciar() {
+  $("bInicio").innerHTML = ICONO.inicio; $("bAtras").innerHTML = ICONO.atras; $("bAdelante").innerHTML = ICONO.adelante; $("bFin").innerHTML = ICONO.fin;
+  botonPlay(false);
+  $("selVel").innerHTML = VELOCIDADES.map(v => `<option value="${v}">${fmtVel(v)}</option>`).join("");
+  $("selVentana").innerHTML = VENTANAS.map(v => `<option value="${v}">Ventana de ${fmtVen(v)}</option>`).join("");
   $("selVel").value = "1"; $("selVentana").value = "30";
-}
-
-function cargarInfo() {
+  habilitarMandos(false);
   fetch("/api/info").then(r => r.json()).then(info => {
     S.info = info;
     $("selLenguaje").innerHTML = info.lenguajes.map(l => `<option value="${l.id}" ${l.disponible ? "" : "disabled"}>${esc(l.nombre)}${l.disponible ? "" : " · " + esc(l.nota)}</option>`).join("");
     $("selEscenario").innerHTML = info.escenarios.map(e => `<option value="${e.id}" ${e.disponible ? "" : "disabled"}>${e.id} · ${esc(e.titulo)}${e.disponible ? "" : " (no generado)"}</option>`).join("");
-  }, () => mostrarAviso("No se pudo hablar con el servidor local. ¿Sigue abierto interfaz/servidor.py?"));
+  }, () => mostrarAviso("No se pudo conectar con el servidor local. ¿Sigue abierto interfaz/servidor.py?"));
 }
-
+function habilitarMandos(si) { ["bInicio", "bAtras", "bPlay", "bAdelante", "bFin", "selVel", "selVentana"].forEach(id => $(id).disabled = !si); }
+function botonPlay(jugando) { $("bPlay").innerHTML = (jugando ? ICONO.pausa : ICONO.play) + `<span>${jugando ? "Pausar" : "Reproducir"}</span>`; }
 function mostrarAviso(t) { $("aviso").style.display = t ? "block" : "none"; $("aviso").textContent = t || ""; }
-function cargando(t) { $("cargando").style.display = t ? "flex" : "none"; $("cargandoTxt").textContent = t || ""; $("btnEjecutar").disabled = !!t; $("btnEjecutarPropios").disabled = !!t; }
+function cargando(si) {
+  $("btnEjecutar").disabled = si; $("btnEjecutarPropios").disabled = si;
+  $("btnEjecutar").innerHTML = si ? '<span class="giro"></span><span>Ejecutando…</span>' : "<span>Ejecutar</span>";
+}
 function cancelarGuia() { S.temporizadores.forEach(clearTimeout); S.temporizadores = []; }
+function notaEtapa(html) { $("notaEtapa").innerHTML = html; }
 
 function ejecutar(cuerpo) {
-  cancelarGuia(); pausar(); mostrarAviso("");
+  cancelarGuia(); pausar(); mostrarAviso(""); cargando(true);
   const nombre = $("selLenguaje").selectedOptions[0].textContent;
-  cargando(`Ejecutando de verdad ${nombre} · ${cuerpo.escenario === "propio" ? "datos propios" : cuerpo.escenario} (si el código cambió, primero se construye el .jar)…`);
+  notaEtapa(`Ejecutando <b>${esc(nombre)}</b> sobre ${cuerpo.escenario === "propio" ? "tus datos" : esc(cuerpo.escenario)}. Si el código cambió, primero se construye el .jar.`);
   fetch("/api/ejecutar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) })
     .then(r => r.json()).then(d => {
-      cargando("");
-      if (d.error) { mostrarAviso("ERROR: " + d.error + (d.construccion ? "\n\n" + d.construccion : "")); return; }
-      if (d.codigo !== 0) { mostrarAviso(`El programa terminó con código ${d.codigo}.\n${d.pantalla}${d.errorEstandar}`); return; }
+      cargando(false);
+      if (d.error) { notaEtapa(""); mostrarAviso("Error: " + d.error + (d.construccion ? "\n\n" + d.construccion : "")); return; }
+      if (d.codigo !== 0) { notaEtapa(""); mostrarAviso(`El programa terminó con código ${d.codigo}.\n${d.pantalla}${d.errorEstandar}`); return; }
       S.M = construirModelo(d);
       prepararVista();
       recorridoGuiado();
-    }, () => { cargando(""); mostrarAviso("Se perdió la conexión con el servidor local."); });
+    }, () => { cargando(false); mostrarAviso("Se perdió la conexión con el servidor local."); });
 }
 
-// ============================================================== Etapas y ejecución
-function pintarEtapas() {
+// ============================================================== Resumen y etapas
+function pintarResumen() {
   const d = S.M.d, ns = d.etapasNs;
   const total = ns ? Object.values(ns).reduce((a, b) => a + b, 0) : 0;
-  ["lectura", "validacion", "simulacion", "reportes", "escritura"].forEach((e, k) => {
-    $("ms" + (k + 1)).textContent = ns ? ms(ns[e]) : "no medido (referencia)";
-    $("b" + (k + 1)).style.width = ns ? Math.max(2, 100 * ns[e] / total) + "%" : "0";
-  });
-  const proceso = d.segundos * 1000, sello = (ok, si, no) => ok === null || ok === undefined ? "" : `<span class="sello ${ok ? "ok" : "mal"}">${ok ? si : no}</span>`;
-  $("ejec").innerHTML = `<div><span class="chip-l" style="background:${COLOR_L[d.lenguaje]}"></span><b>${esc(d.nombreLenguaje)}</b> · ${esc(d.escenario === "propio" ? "datos propios" : d.escenario + " · " + d.titulo)}</div>
-    <div class="total">proceso completo: ${(proceso).toLocaleString("es-CO", { maximumFractionDigits: 0 })} ms${ns ? ` · etapas: ${ms(total)}` : ""}</div>
-    <div>${sello(d.coincideEsperado, "= salida esperada", "≠ salida esperada")}${sello(d.pantallaIgualReporte, "pantalla = reporte.txt", "pantalla ≠ reporte")}${sello(S.M.coincide, "explicación = salida real", "explicación ≠ salida real")}</div>`;
+  ["lectura", "validacion", "simulacion", "reportes", "escritura"].forEach((e, k) => { $("ms" + (k + 1)).textContent = ns ? ms(ns[e]) : "no se mide"; });
+  $("ejecucion").innerHTML = `<span class="punto" style="background:${COLOR_L[d.lenguaje]}"></span><b>${esc(d.nombreLenguaje)}</b>
+    <span class="tenue">·</span><span>${esc(d.escenario === "propio" ? "Datos propios" : d.escenario + " · " + d.titulo)}</span>
+    <span class="tenue">·</span><span class="sub num">proceso completo ${Math.round(d.segundos * 1000).toLocaleString("es-CO")} ms${ns ? ` · etapas ${ms(total)}` : ""}</span>`;
+  const pastilla = (ok, texto) => ok === null || ok === undefined ? "" : `<span class="pastilla ${ok ? "ok" : "mal"}">${ok ? ICONO.ok : ICONO.no}${texto}</span>`;
+  $("pastillas").innerHTML = pastilla(d.coincideEsperado, "Salida esperada") + pastilla(d.pantallaIgualReporte, "Pantalla = reporte.txt") + pastilla(S.M.coincide, "Explicación = salida real");
 }
 function marcarEtapa(n) {
   S.etapa = n;
-  document.querySelectorAll(".etapa").forEach(el => { const k = +el.dataset.e; el.classList.toggle("activa", k === n); el.classList.toggle("hecha", k < n); });
+  document.querySelectorAll("#etapas li").forEach(el => { const k = +el.dataset.e; el.classList.toggle("activa", k === n); el.classList.toggle("hecha", k < n); });
+  document.querySelectorAll("#etapas li .circulo").forEach((c, i) => { c.innerHTML = i + 1 < n ? ICONO.ok : String(i + 1); });
 }
 
 // ============================================================== Recorrido guiado
 function recorridoGuiado() {
   const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
   marcarEtapa(1); abrirPestana("entrada");
-  narrar(`<b>1 · Lectura.</b> El programa leyó ${miles(M.regP.length)} registros de pistas y ${miles(M.regV.length)} de vuelos (${esc(M.d.rutas.pistas)}, ${esc(M.d.rutas.vuelos)}).`);
+  notaEtapa(`<b>Lectura.</b> Se leyeron ${plural(M.regP.length, "registro", "registros")} de pistas y ${plural(M.regV.length, "registro", "registros")} de vuelos.`);
   t(2200, () => {
     marcarEtapa(2); abrirPestana("validacion");
-    narrar(`<b>2 · Validación.</b> ${miles(M.pistas.length)} pistas y ${miles(M.vuelos.length)} vuelos válidos; ${miles(M.errores.length)} registros con error van a errores.csv. ${M.noAsignables.length === 1 ? "1 vuelo no tiene ninguna pista posible (RN09)." : M.noAsignables.length ? miles(M.noAsignables.length) + " vuelos no tienen ninguna pista posible (RN09)." : ""}`);
+    notaEtapa(`<b>Validación.</b> ${plural(M.pistas.length, "pista válida", "pistas válidas")} y ${plural(M.vuelos.length, "vuelo válido", "vuelos válidos")}. ${M.errores.length ? plural(M.errores.length, "registro con error va", "registros con error van") + " a errores.csv." : "Sin errores."}${M.noAsignables.length ? " " + plural(M.noAsignables.length, "vuelo no tiene", "vuelos no tienen") + " ninguna pista posible." : ""}`);
   });
-  t(5200, () => {
+  t(5000, () => {
     marcarEtapa(3); abrirPestana("operaciones");
-    narrar(`<b>3 · Simulación.</b> ${miles(M.asignables.length)} vuelos en ${M.traza.filas.length} filas y ${M.operativas.length} pistas operativas. Pulsa <b>evento ▷</b> para ir paso a paso.`);
+    notaEtapa(`<b>Simulación.</b> ${plural(M.asignables.length, "vuelo", "vuelos")} en ${plural(M.traza.filas.length, "fila", "filas")} y ${plural(M.operativas.length, "pista operativa", "pistas operativas")}. Usa las flechas para ir evento por evento.`);
     irA(M.t0); reproducir();
   });
 }
 function alTerminarSimulacion() {
   if (S.etapa !== 3) return;
   const M = S.M, t = (ms_, f) => S.temporizadores.push(setTimeout(f, ms_));
-  t(900, () => { marcarEtapa(4); abrirPestana("reporte"); narrar(`<b>4 · Reportes.</b> Con las ${miles(M.ops.length)} operaciones se arma reporte.txt (RF08 a RF14), que además se imprime en pantalla.`); });
-  t(3600, () => { marcarEtapa(5); abrirPestana("ejecucion"); narrar(`<b>5 · Escritura.</b> Se escribieron operaciones.csv, errores.csv y reporte.txt en ${esc(M.d.rutas.salida)}/.`); });
+  t(900, () => { marcarEtapa(4); abrirPestana("reporte"); notaEtapa(`<b>Reportes.</b> Con las ${miles(M.ops.length)} operaciones se arma reporte.txt (RF08 a RF14), el mismo texto que el programa imprime.`); });
+  t(3600, () => { marcarEtapa(5); abrirPestana("ejecucion"); notaEtapa(`<b>Escritura.</b> operaciones.csv, errores.csv y reporte.txt quedaron en ${esc(M.d.rutas.salida)}/.`); });
 }
 
 // ============================================================== Reloj
 function prepararVista() {
   const M = S.M, lapso = Math.max(1, M.t1 - M.t0);
-  const vel = VELOCIDADES.reduce((m, v) => Math.abs(Math.log(v / (lapso / 25))) < Math.abs(Math.log(m / (lapso / 25))) ? v : m, 1);
-  S.vel = vel; $("selVel").value = String(vel);
-  const ven = lapso <= 40 ? 30 : lapso <= 300 ? 120 : lapso <= 2000 ? 480 : 1440;
-  S.ventana = ven; $("selVentana").value = String(ven);
-  pintarEtapas(); S.pasoMostrado = -2; S.minutoPintado = null; $("registro").innerHTML = "";
+  S.vel = VELOCIDADES.reduce((m, v) => Math.abs(Math.log(v / (lapso / 25))) < Math.abs(Math.log(m / (lapso / 25))) ? v : m, 1);
+  $("selVel").value = String(S.vel);
+  S.ventana = lapso <= 40 ? 30 : lapso <= 300 ? 120 : lapso <= 2000 ? 480 : 1440;
+  $("selVentana").value = String(S.ventana);
+  $("vacio").hidden = true; $("lienzo").hidden = false; $("leyenda").hidden = false;
+  habilitarMandos(true);
+  pintarResumen(); S.pasoMostrado = -2; S.minutoPintado = null;
   irA(M.t0);
 }
 function irA(t) { if (!S.M) return; S.t = Math.max(S.M.t0, Math.min(S.M.t1, t)); S.ultimoPanel = 0; dibujarTodo(); }
-function reproducir() { if (!S.M) return; if (S.t >= S.M.t1) S.t = S.M.t0; S.jugando = true; S.ultimo = performance.now(); $("bPlay").textContent = "⏸ Pausar"; requestAnimationFrame(cuadro); }
-function pausar() { S.jugando = false; $("bPlay").textContent = "▶ Reproducir"; }
+function reproducir() { if (!S.M) return; if (S.t >= S.M.t1) S.t = S.M.t0; S.jugando = true; S.ultimo = performance.now(); botonPlay(true); requestAnimationFrame(cuadro); }
+function pausar() { S.jugando = false; botonPlay(false); }
 function indicePaso(t) { return hasta(S.M.traza.pasos, t, p => p.minuto) - 1; }
+function ocupante(t) {
+  return S.M.pistas.map(p => { const l = S.M.porPista.get(p.id) || [], o = l[hasta(l, t, x => x.ini) - 1]; return o && t < o.fin ? o : null; });
+}
 function cuadro(ahora) {
   if (!S.jugando || !S.M) return;
   const dt = Math.min(0.25, (ahora - S.ultimo) / 1000); S.ultimo = ahora;
@@ -451,13 +526,21 @@ function cuadro(ahora) {
   if ($("chkSaltar").checked) {
     const k = indicePaso(S.t), sig = S.M.traza.pasos[k + 1];
     const ocupado = ocupante(S.t).some(o => o) || (S.M.traza.pasos[k] && S.M.traza.pasos[k].esperan.length);
-    if (sig && !ocupado && sig.minuto - S.t > Math.max(3, S.vel * 1.5)) { t = sig.minuto - Math.min(1, S.vel * 0.4); narrar(`⏩ No pasa nada hasta ${hora(sig.minuto)}: el reloj salta al siguiente evento, como el algoritmo.`); }
+    if (sig && !ocupado && sig.minuto - S.t > Math.max(3, S.vel * 1.5)) {
+      t = sig.minuto - Math.min(1, S.vel * 0.4);
+      S.mensaje = { texto: `Sin eventos hasta ${hora(sig.minuto)}: el reloj salta, como el algoritmo`, hasta: ahora + 2500 };
+    }
   }
   if (t >= S.M.t1) { S.t = S.M.t1; pausar(); dibujarTodo(); alTerminarSimulacion(); return; }
   S.t = t; dibujarTodo(); requestAnimationFrame(cuadro);
 }
+function entrarSimulacion() {
+  if (!S.M || S.etapa === 3) return;
+  marcarEtapa(3);
+  notaEtapa(`<b>Simulación.</b> ${plural(S.M.asignables.length, "vuelo", "vuelos")} en ${plural(S.M.traza.filas.length, "fila", "filas")} y ${plural(S.M.operativas.length, "pista operativa", "pistas operativas")}. Usa las flechas para ir evento por evento.`);
+}
 function saltarEvento(dir) {
-  if (!S.M) return; cancelarGuia(); pausar();
+  if (!S.M) return; cancelarGuia(); pausar(); entrarSimulacion();
   const pasos = S.M.traza.pasos, k = indicePaso(S.t);
   const destino = dir > 0 ? pasos[Math.min(pasos.length - 1, k + 1)] : pasos[Math.max(0, (S.t > (pasos[k] || {}).minuto ? k : k - 1))];
   if (destino) irA(destino.minuto);
@@ -465,79 +548,90 @@ function saltarEvento(dir) {
 }
 
 // ============================================================== Dibujo
-// Operación que ocupa cada pista en el minuto t (o null)
-function ocupante(t) {
-  return S.M.pistas.map(p => { const l = S.M.porPista.get(p.id) || [], o = l[hasta(l, t, x => x.ini) - 1]; return o && t < o.fin ? o : null; });
-}
-let COL = null, FUENTE = "";
+let COL = null;
 function dibujarTodo() {
   if (!S.M) return;
-  if (!COL) { const cs = getComputedStyle(document.documentElement); COL = {}; ["--ambar", "--aterriza", "--despega", "--emerg", "--suave", "--tenue", "--texto", "--mono"].forEach(n => COL[n] = cs.getPropertyValue(n).trim()); FUENTE = getComputedStyle(document.body).fontFamily; }
+  if (!COL) { const cs = getComputedStyle(document.documentElement); COL = {}; ["--acento", "--aterriza", "--despega", "--emerg", "--texto", "--texto2", "--tenue", "--borde", "--linea", "--primario"].forEach(n => COL[n] = cs.getPropertyValue(n).trim()); }
   $("hora").textContent = hora(Math.floor(S.t));
-  const k = indicePaso(S.t), pasos = S.M.traza.pasos;
-  $("pasoInfo").textContent = pasos.length ? `evento ${Math.max(0, k + 1)} de ${miles(pasos.length)} · ${miles(hasta(S.M.ops, S.t, o => o.ini))} de ${miles(S.M.ops.length)} operaciones asignadas` : "no hay vuelos asignables";
+  const k = indicePaso(S.t), pasos = S.M.traza.pasos, ahora = performance.now();
+  const msj = S.mensaje && ahora < S.mensaje.hasta ? S.mensaje.texto : null;
+  $("pasoInfo").textContent = msj || (pasos.length ? `Evento ${miles(Math.max(0, k + 1))} de ${miles(pasos.length)} · ${miles(hasta(S.M.ops, S.t, o => o.ini))} de ${miles(S.M.ops.length)} asignadas` : "No hay vuelos asignables");
   dibujarLienzo();
   // los paneles de texto se actualizan como mucho 5 veces por segundo mientras se reproduce
-  const ahora = performance.now();
   if (S.jugando && ahora - (S.ultimoPanel || 0) < 200) return;
   S.ultimoPanel = ahora;
   const minuto = Math.floor(S.t * 4) / 4;
   if (minuto !== S.minutoPintado) { dibujarFilas(); dibujarEstadoPistas(); S.minutoPintado = minuto; }
-  if (k !== S.pasoMostrado) { dibujarBitacora(k); S.pasoMostrado = k; if (S.pestana === "operaciones") abrirPestana("operaciones"); }
+  if (k !== S.pasoMostrado) { dibujarDecision(k); S.pasoMostrado = k; if (S.pestana === "operaciones") abrirPestana("operaciones"); }
+}
+
+function rectRedondo(g, x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  g.beginPath(); g.moveTo(x + rr, y); g.arcTo(x + w, y, x + w, y + h, rr); g.arcTo(x + w, y + h, x, y + h, rr); g.arcTo(x, y + h, x, y, rr); g.arcTo(x, y, x + w, y, rr); g.closePath();
 }
 
 function dibujarLienzo() {
-  const M = S.M, cv = $("lienzo"), dpr = window.devicePixelRatio || 1;
-  const ancho = cv.clientWidth, carriles = M.pistas.length, alto = 46 + 34 + carriles * 40 + 14;
+  const M = S.M, cv = $("lienzo"), dpr = window.devicePixelRatio || 1, C = COL;
+  const FUENTE = getComputedStyle(document.body).fontFamily;
+  const ancho = cv.clientWidth, ALTO_PISTA = 40, y0 = 74, alto = y0 + M.pistas.length * ALTO_PISTA + 6;
   if (cv.width !== Math.round(ancho * dpr) || cv.height !== Math.round(alto * dpr)) { cv.width = Math.round(ancho * dpr); cv.height = Math.round(alto * dpr); cv.style.height = alto + "px"; }
   const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, ancho, alto);
-  const izq = 150, der = ancho - 10, W = S.ventana, a = S.t - W * 0.72, b = a + W;
+  const izq = 128, der = ancho - 4, W = S.ventana, a = S.t - W * 0.7, b = a + W;
   const X = m => izq + (m - a) / W * (der - izq);
-  const css = n => COL[n];
-  // eje de tiempo
-  const paso = [1, 5, 15, 30, 60, 180, 360, 720, 1440].find(p => (der - izq) / (W / p) >= 60) || 1440;
-  g.font = "11px " + css("--mono"); g.textAlign = "center";
+  // eje
+  const paso = [1, 5, 15, 30, 60, 180, 360, 720, 1440].find(p => (der - izq) / (W / p) >= 70) || 1440;
+  g.font = `500 11px ${FUENTE}`; g.textAlign = "center"; g.textBaseline = "alphabetic";
   for (let m = Math.ceil(a / paso) * paso; m <= b; m += paso) {
-    const x = X(m); g.strokeStyle = "#1C3048"; g.beginPath(); g.moveTo(x, 18); g.lineTo(x, alto - 6); g.stroke();
-    g.fillStyle = css("--tenue"); g.fillText(paso >= 1440 ? `D${Math.floor(m / 1440) + 1}` : (m % 1440 === 0 ? hora(m) : horaCorta(m)), x, 12);
+    const x = X(m); g.strokeStyle = C["--linea"]; g.lineWidth = 1; g.beginPath(); g.moveTo(x, 22); g.lineTo(x, alto); g.stroke();
+    g.fillStyle = C["--tenue"]; g.fillText(paso >= 1440 ? `D${Math.floor(m / 1440) + 1}` : (m % 1440 === 0 ? hora(m) : horaCorta(m)), x, 12);
   }
-  // marcas de los pasos del algoritmo
-  const pasos = M.traza.pasos;
-  for (let i = Math.max(0, hasta(pasos, a, p => p.minuto) - 1); i < pasos.length && pasos[i].minuto <= b; i++) {
-    const x = X(pasos[i].minuto); g.fillStyle = pasos[i].minuto <= S.t ? css("--ambar") : "#3A4F6A"; g.beginPath(); g.moveTo(x - 4, 18); g.lineTo(x + 4, 18); g.lineTo(x, 25); g.fill();
+  // eventos del algoritmo
+  const pasos = M.traza.pasos, kActual = indicePaso(S.t);
+  for (let i = Math.max(0, hasta(pasos, a, p => p.minuto) - 1); W <= 240 && i < pasos.length && pasos[i].minuto <= b; i++) {
+    const x = X(pasos[i].minuto); g.fillStyle = i === kActual ? C["--acento"] : pasos[i].minuto <= S.t ? C["--texto2"] : C["--borde"];
+    g.beginPath(); g.arc(x, 22, i === kActual ? 3.5 : 2.5, 0, Math.PI * 2); g.fill();
   }
   // llegadas
-  const yL = 46; g.textAlign = "left"; g.fillStyle = css("--suave"); g.font = "12px " + FUENTE; g.fillText("Llegadas", 12, yL + 4);
+  const yL = 48; g.textAlign = "left"; g.fillStyle = C["--texto2"]; g.font = `500 12px ${FUENTE}`; g.fillText("Llegadas", 0, yL + 4);
   const li = M.llegadas; let ultimaEtiqueta = -1e9;
+  g.save(); g.beginPath(); g.rect(izq - 8, 0, der - izq + 12, alto); g.clip();
   for (let i = hasta(li, a - 1, v => v.prog); i < li.length && li[i].prog <= b; i++) {
     const v = li[i], x = X(v.prog), llego = v.prog <= S.t, fuera = M.fuera.has(v);
-    g.beginPath(); g.arc(x, yL, 5, 0, Math.PI * 2);
-    g.strokeStyle = fuera ? "#8892A0" : v.operacion === "Aterrizaje" ? css("--aterriza") : css("--despega");
-    g.fillStyle = g.strokeStyle; g.lineWidth = 2; if (llego) g.fill(); else g.stroke();
-    if (v.prioridad === "Emergencia") { g.strokeStyle = css("--emerg"); g.beginPath(); g.arc(x, yL, 8, 0, Math.PI * 2); g.stroke(); }
-    if (W <= 60 && llego && x - ultimaEtiqueta > 52) { g.fillStyle = css("--suave"); g.font = "10px " + css("--mono"); g.fillText(v.codigo, x - 4, yL - 10); ultimaEtiqueta = x; }
+    const color = fuera ? C["--tenue"] : v.operacion === "Aterrizaje" ? C["--aterriza"] : C["--despega"];
+    if (W > 120) { g.globalAlpha = llego ? 0.55 : 0.25; g.fillStyle = v.prioridad === "Emergencia" ? C["--emerg"] : color; g.fillRect(x - 0.75, yL - 6, 1.5, 12); g.globalAlpha = 1; continue; }
+    g.beginPath(); g.arc(x, yL, 4, 0, Math.PI * 2); g.lineWidth = 1.5; g.strokeStyle = color; g.fillStyle = color;
+    if (llego) g.fill(); else { g.fillStyle = "#fff"; g.fill(); g.stroke(); }
+    if (v.prioridad === "Emergencia") { g.strokeStyle = C["--emerg"]; g.lineWidth = 1.5; g.beginPath(); g.arc(x, yL, 7, 0, Math.PI * 2); g.stroke(); }
+    if (W <= 60 && llego && x - ultimaEtiqueta > 56) { g.fillStyle = C["--texto2"]; g.font = `500 10.5px ${FUENTE}`; g.fillText(v.codigo, x - 5, yL - 11); ultimaEtiqueta = x; }
   }
+  g.restore();
   // pistas
-  const y0 = 46 + 34;
   M.pistas.forEach((p, i) => {
-    const y = y0 + i * 40, cerrada = p.estado !== "Operativa";
-    g.fillStyle = cerrada ? "#101C2C" : "#0F2036"; g.fillRect(izq, y, der - izq, 30);
-    g.fillStyle = cerrada ? css("--tenue") : css("--texto"); g.font = "bold 13px " + css("--mono"); g.textAlign = "left"; g.fillText(p.id, 12, y + 13);
-    g.fillStyle = css("--tenue"); g.font = "11px " + FUENTE; g.fillText(`${p.uso} · ${miles(p.longitud)} m${cerrada ? " · cerrada" : ""}`, 12, y + 27);
-    if (cerrada) { g.strokeStyle = "#2A3B52"; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(izq, y + 15); g.lineTo(der, y + 15); g.stroke(); g.setLineDash([]); return; }
-    const lista_ = M.porPista.get(p.id) || [];
-    for (let j = Math.max(0, hasta(lista_, a - 5, o => o.ini) - 1); j < lista_.length && lista_[j].ini <= b; j++) {
-      const o = lista_[j]; if (o.ini > S.t) break;
-      const color = o.operacion === "Aterrizaje" ? css("--aterriza") : css("--despega");
-      const x1 = X(o.ini), x2 = X(o.fin), xt = X(Math.min(o.fin, S.t));
-      g.fillStyle = color; g.globalAlpha = 0.95; g.fillRect(x1, y + 2, Math.max(1, xt - x1), 26); g.globalAlpha = 1;
-      if (S.t < o.fin) { g.globalAlpha = 0.22; g.fillStyle = color; g.fillRect(xt, y + 2, x2 - xt, 26); g.globalAlpha = 1; g.strokeStyle = color; g.setLineDash([4, 3]); g.strokeRect(xt, y + 2.5, x2 - xt, 25); g.setLineDash([]); }
-      if (o.prioridad === "Emergencia") { g.strokeStyle = css("--emerg"); g.lineWidth = 2.5; g.strokeRect(x1 + 1, y + 2, x2 - x1 - 2, 26); g.lineWidth = 1; }
-      if (x2 - x1 > 46) { g.fillStyle = xt - x1 > 46 ? "#06111F" : css("--texto"); g.font = "bold 11px " + css("--mono"); g.textAlign = "left"; g.fillText(o.codigo, x1 + 5, y + 19); }
+    const y = y0 + i * ALTO_PISTA, cerrada = p.estado !== "Operativa";
+    g.fillStyle = i % 2 ? "#FBFCFD" : "#F7F8FA"; rectRedondo(g, izq, y, der - izq, ALTO_PISTA - 8, 6); g.fill();
+    g.textAlign = "left"; g.fillStyle = cerrada ? C["--tenue"] : C["--texto"]; g.font = `600 13px ${FUENTE}`; g.fillText(p.id, 0, y + 13);
+    g.fillStyle = C["--tenue"]; g.font = `400 11px ${FUENTE}`; g.fillText(cerrada ? "Cerrada" : `${p.uso} · ${miles(p.longitud)} m`, 0, y + 28);
+    if (cerrada) { g.strokeStyle = C["--borde"]; g.setLineDash([4, 5]); g.beginPath(); g.moveTo(izq + 8, y + 16); g.lineTo(der - 8, y + 16); g.stroke(); g.setLineDash([]); return; }
+    const l = M.porPista.get(p.id) || [];
+    g.save(); g.beginPath(); g.rect(izq, y, der - izq, ALTO_PISTA); g.clip();
+    for (let j = Math.max(0, hasta(l, a - 5, o => o.ini) - 1); j < l.length && l[j].ini <= b; j++) {
+      const o = l[j]; if (o.ini > S.t) break;
+      const color = o.operacion === "Aterrizaje" ? C["--aterriza"] : C["--despega"];
+      const bruto = X(o.fin) - X(o.ini), sangria = bruto > 8 ? 1 : 0;
+      const x1 = X(o.ini) + sangria, w = Math.max(1.5, bruto - 2 * sangria), x2 = x1 + w, xt = Math.min(x2, X(Math.min(o.fin, S.t)));
+      const r = w > 10 ? 5 : 0, h = ALTO_PISTA - 14;
+      rectRedondo(g, x1, y + 3, w, h, r); g.fillStyle = "#E4E7EC"; g.fill();
+      if (xt > x1) { g.save(); rectRedondo(g, x1, y + 3, w, h, r); g.clip(); g.fillStyle = color; g.fillRect(x1, y + 3, xt - x1, h); g.restore(); }
+      if (o.prioridad === "Emergencia" && w > 8) { rectRedondo(g, x1, y + 3, w, h, r); g.strokeStyle = C["--emerg"]; g.lineWidth = 2; g.stroke(); g.lineWidth = 1; }
+      if (w > 48) {
+        g.font = `600 11px ${FUENTE}`; g.fillStyle = C["--texto"]; g.fillText(o.codigo, x1 + 7, y + 20);
+        if (xt > x1) { g.save(); g.beginPath(); g.rect(x1, y + 3, xt - x1, h); g.clip(); g.fillStyle = "#fff"; g.fillText(o.codigo, x1 + 7, y + 20); g.restore(); }
+      }
     }
+    g.restore();
   });
   // ahora
-  const xa = X(S.t); g.strokeStyle = css("--ambar"); g.lineWidth = 2; g.beginPath(); g.moveTo(xa, 16); g.lineTo(xa, alto - 4); g.stroke(); g.lineWidth = 1;
+  const xa = X(S.t); g.strokeStyle = C["--acento"]; g.lineWidth = 2; g.beginPath(); g.moveTo(xa, 30); g.lineTo(xa, alto); g.stroke(); g.lineWidth = 1;
 }
 
 function dibujarFilas() {
@@ -547,36 +641,73 @@ function dibujarFilas() {
     const asignados = hasta(f.ini, t, x => x), llegados = hasta(f.prog, t, x => x);
     const esperando = f.vuelos.slice(asignados, Math.max(asignados, llegados));
     const porLlegar = f.vuelos.length - Math.max(asignados, llegados);
-    const fichas = esperando.slice(0, 6).map((v, i) => `<span class="ficha ${i === 0 ? "cabeza" : ""} ${pr === "Emergencia" ? "emerg" : ""}" title="programado ${hora(v.prog)}">${esc(v.codigo)} ${horaCorta(v.prog)}</span>`).join("");
-    return `<div class="fila"><div class="cab"><b>${op} · ${cat}${pr === "Emergencia" ? " · <span style='color:var(--emerg)'>Emergencia</span>" : ""}</b><span>${esperando.length === 1 ? "1 espera" : esperando.length ? miles(esperando.length) + " esperan" : ""}</span></div>
-      <div class="fichas">${fichas || '<span class="vacia">nadie esperando</span>'}${esperando.length > 6 ? `<span class="vacia">+${miles(esperando.length - 6)}</span>` : ""}</div>
-      <div class="vacia">${porLlegar ? miles(porLlegar) + " por llegar" : "sin vuelos por llegar"} · ${miles(asignados)} asignado${asignados === 1 ? "" : "s"}</div></div>`;
+    const fichas = esperando.slice(0, 4).map((v, i) => `<span class="ficha ${i === 0 ? "cabeza" : ""}" title="programado ${hora(v.prog)}">${esc(v.codigo)}</span>`).join("");
+    return `<div class="fila"><div class="fila-cab"><b>${op} · ${cat}</b><span class="sub">${esperando.length ? plural(esperando.length, "espera", "esperan") : ""}</span></div>
+      <div class="fichas">${fichas || '<span class="fila-pie">Nadie espera</span>'}${esperando.length > 4 ? `<span class="mas">+${miles(esperando.length - 4)}</span>` : ""}</div>
+      <div class="fila-pie">${pr === "Emergencia" ? '<span class="etq rojo">Emergencia</span> ' : ""}${plural(asignados, "asignado", "asignados")} · ${plural(porLlegar, "por llegar", "por llegar")}</div></div>`;
   }).join("");
-  $("listaFilas").innerHTML = html || '<p class="vacia">No hay vuelos asignables.</p>';
+  $("listaFilas").innerHTML = html || '<p class="sub">No hay vuelos asignables.</p>';
 }
 
 function dibujarEstadoPistas() {
   const ocup = ocupante(S.t);
   $("estadoPistas").innerHTML = S.M.pistas.map((p, i) => {
-    if (p.estado !== "Operativa") return `<div class="estPista cerrada"><b>${esc(p.id)}</b> · cerrada</div>`;
+    if (p.estado !== "Operativa") return `<span class="pista-e cerrada"><span class="estado"></span><b>${esc(p.id)}</b> cerrada</span>`;
     const o = ocup[i];
-    return `<div class="estPista ${o ? "ocupada" : ""}"><b>${esc(p.id)}</b> · ${o ? `${esc(o.codigo)} hasta ${horaCorta(o.fin)}` : "libre"}</div>`;
+    return `<span class="pista-e ${o ? "ocupada" : ""}"><span class="estado"></span><b>${esc(p.id)}</b>${o ? `${esc(o.codigo)} hasta ${horaCorta(o.fin)}` : "libre"}</span>`;
   }).join("");
 }
 
-function dibujarBitacora(k) {
-  const M = S.M, pasos = M.traza.pasos, desde = Math.max(0, k - 80);
-  const html = [];
-  for (let i = desde; i <= k; i++) {
-    const p = pasos[i]; p.previo = i > 0 ? pasos[i - 1].minuto : -1;
-    const lineas = textoPaso(p, M);
-    html.push(`<div class="paso ${i === k ? "actual" : ""}"><h4>${hora(p.minuto)} · evento ${i + 1}</h4>${lineas.map(l => `<p class="${l.c}">${l.t}</p>`).join("")}</div>`);
-    if (i === k) narrar(`<b>${hora(p.minuto)}</b> · ${lineas.map(l => l.t).join(" · ")}`);
-  }
-  $("registro").innerHTML = html.join("") || '<p class="vacia">Aún no empieza la simulación.</p>';
-  $("registro").scrollTop = $("registro").scrollHeight;
+// ============================================================== Panel de decisiones
+function textoOcupadas(lista_, minuto) {
+  const ocup = lista_.filter(c => c.hasta > minuto);
+  const mismas = ocup.length && ocup.every(c => c.hasta === ocup[0].hasta);
+  if (mismas) return `${lista(ocup.map(c => c.id))} ${ocup.length > 1 ? "ocupadas" : "ocupada"} hasta ${horaCorta(ocup[0].hasta)}`;
+  return lista(ocup.map(c => `${c.id} hasta ${horaCorta(c.hasta)}`));
 }
-function narrar(html) { $("narracion").innerHTML = html; }
+function htmlEvento(i) {
+  const M = S.M, p = M.traza.pasos[i], previo = i > 0 ? M.traza.pasos[i - 1].minuto : -1;
+  const codigo = v => `<span class="cod${v.prioridad === "Emergencia" ? " emerg" : ""}">${esc(v.codigo)}</span>`;
+  const sec = (titulo, cuerpo) => cuerpo ? `<div class="ev-sec"><div class="ev-tit">${titulo}</div>${cuerpo}</div>` : "";
+  const llegan = p.llegan.length ? `<div class="ev-fila">${p.llegan.slice(0, 10).map(codigo).join("")}${p.llegan.length > 10 ? `<span class="mas">+${miles(p.llegan.length - 10)}</span>` : ""}</div>` : "";
+  const libres = p.liberadas.length ? `<div class="ev-fila">${p.liberadas.map(x => `<span class="pista">${esc(x)}</span>`).join("")}</div>` : "";
+  const asig = p.asignaciones.slice(0, 8).map(a => {
+    const ocup = a.ocupadasAntes.filter(o => o.hasta > p.minuto), grupos = new Map();
+    a.rivales.forEach(r => { if (!grupos.has(r.razon)) grupos.set(r.razon, []); grupos.get(r.razon).push(r.v.codigo); });
+    const razones = [ocup.length ? mayuscula(textoOcupadas(ocup, p.minuto)) : "Es la pista libre compatible de menor id"];
+    grupos.forEach((cods, razon) => razones.push(`Gana a ${lista(cods.slice(0, 3))}${cods.length > 3 ? ` y ${cods.length - 3} más` : ""} porque ${razon}`));
+    return `<div class="ev-item"><div class="ev-linea">${codigo(a.v)}<span class="flecha">→</span><span class="pista">${esc(a.pista.id)}</span>${a.v.prioridad === "Emergencia" ? '<span class="etq rojo">Emergencia</span>' : ""}<span class="hasta">hasta ${horaCorta(a.fin)}</span></div><div class="ev-razon">${razones.join(". ")}.</div></div>`;
+  }).join("") + (p.asignaciones.length > 8 ? `<p class="ev-fin">y ${p.asignaciones.length - 8} asignaciones más</p>` : "");
+  const esperan = p.esperan.slice(0, 5).map(e => {
+    const bloquea = p.asignaciones.filter(a => prioridad(e.v, a.v) < 0).map(a => a.v.codigo);
+    return `<div class="ev-item"><div class="ev-linea">${codigo(e.v)}<span class="etq ambar">Espera</span></div><div class="ev-razon">${mayuscula(textoOcupadas(e.compatibles, p.minuto))}${bloquea.length ? `. No bloquea a ${lista(bloquea)}` : ""}.</div></div>`;
+  }).join("") + (p.esperan.length > 5 ? `<p class="ev-fin">y ${p.esperan.length - 5} filas más esperan pista</p>` : "");
+  const fuera = M.noAsignables.filter(n => n.v.prog <= p.minuto && n.v.prog > previo).slice(0, 3)
+    .map(n => `<div class="ev-item"><div class="ev-linea">${codigo(n.v)}<span class="etq rojo">Sin pista</span></div><div class="ev-razon">${esc(mayuscula(n.motivo))} (${n.v.categoria}, ${n.v.operacion.toLowerCase()}).</div></div>`).join("");
+  let fin = "";
+  if (!p.asignaciones.length && !p.esperan.length && !p.pendientes) fin = '<p class="ev-fin">Fin de la simulación: no quedan vuelos pendientes.</p>';
+  else if (!p.asignaciones.length && !p.llegan.length && !p.liberadas.length) fin = '<p class="ev-fin">Sin cambios en este evento.</p>';
+  return `<div class="ev-hora"><b>${hora(p.minuto)}</b> · evento ${miles(i + 1)} de ${miles(M.traza.pasos.length)}</div>`
+    + sec("Asignaciones", asig) + sec("Esperan", esperan) + sec("Llegan", llegan) + sec("Se liberan", libres) + sec("No entran a la simulación", fuera) + fin;
+}
+function htmlHistorial(k) {
+  const pasos = S.M.traza.pasos, desde = Math.max(0, k - 150), filas = [];
+  for (let i = k; i >= desde; i--) {
+    const p = pasos[i];
+    const asig = p.asignaciones.slice(0, 2).map(a => `${a.v.codigo} → ${a.pista.id}`).join(", ") + (p.asignaciones.length > 2 ? ` y ${p.asignaciones.length - 2} más` : "");
+    const resto = [asig, p.esperan.length ? plural(p.esperan.length, "espera", "esperan") : ""].filter(Boolean).join(" · ") || (p.liberadas.length ? `Se libera ${lista(p.liberadas)}` : "Sin cambios");
+    filas.push(`<button data-i="${i}" class="${i === k ? "actual" : ""}"><span class="h">${horaCorta(p.minuto)}</span><span>${esc(resto)}</span></button>`);
+  }
+  return `<div class="hist">${filas.join("")}</div>`;
+}
+function dibujarDecision(k) {
+  const cuerpo = $("decisionCuerpo");
+  if (k < 0) { cuerpo.innerHTML = '<p class="sub">La simulación aún no empieza.</p>'; return; }
+  $("decisionTitulo").textContent = S.historial ? "Historial de eventos" : "Evento actual";
+  $("btnHistorial").textContent = S.historial ? "Ver evento actual" : "Ver historial";
+  cuerpo.innerHTML = S.historial ? htmlHistorial(k) : htmlEvento(k);
+  cuerpo.scrollTop = 0;
+}
 
 // ============================================================== Pestañas
 function abrirPestana(p) {
@@ -585,75 +716,77 @@ function abrirPestana(p) {
   if (!S.M) return;
   const M = S.M, d = M.d, c = $("contenido");
   if (p === "entrada") {
-    const tablaReg = (regs, archivo, max) => `<table><tr><th>línea</th><th>registro</th><th>resultado</th></tr>${regs.slice(0, max).map(r => {
+    const tabla = (regs, archivo, max) => `<table><tr><th class="n">Línea</th><th>Registro</th><th>Resultado</th></tr>${regs.slice(0, max).map(r => {
       const mal = M.malas.get(archivo + ":" + r.linea), na = archivo === "vuelos" && !mal && M.lineaFuera.has(r.linea);
-      return `<tr class="${mal ? "invalida" : na ? "noasig" : ""}"><td class="mono">${r.linea}</td><td class="mono">${esc(r.crudo)}</td><td>${mal ? "✗ " + esc(mal) : na ? "válido · no asignable" : "✓ válido"}</td></tr>`; }).join("")}</table>${regs.length > max ? `<p class="nota">… y ${miles(regs.length - max)} registros más.</p>` : ""}`;
-    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">${esc(d.rutas.pistas)} · ${miles(M.regP.length)} registros</p>${tablaReg(M.regP, "pistas", 50)}</div>
-      <div><p class="titulo-panel">${esc(d.rutas.vuelos)} · ${miles(M.regV.length)} registros</p>${tablaReg(M.regV, "vuelos", 200)}</div></div>`;
+      return `<tr class="${mal ? "invalida" : na ? "noasig" : ""}"><td class="n">${r.linea}</td><td class="mono">${esc(r.crudo)}</td><td>${mal ? esc(mal) : na ? "Válido, sin pista posible" : "Válido"}</td></tr>`; }).join("")}</table>${regs.length > max ? `<p class="nota">Se muestran ${max} de ${miles(regs.length)} registros.</p>` : ""}`;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-sec">${esc(d.rutas.pistas)}</p>${tabla(M.regP, "pistas", 50)}</div><div><p class="titulo-sec">${esc(d.rutas.vuelos)}</p>${tabla(M.regV, "vuelos", 150)}</div></div>`;
   } else if (p === "validacion") {
     const errP = M.errores.filter(e => e.archivo === "pistas").length, errV = M.errores.length - errP;
-    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">RF03 · resultado de la validación</p>
-      <table><tr><th></th><th>registros</th><th>válidos</th><th>inválidos</th></tr><tr><td>Pistas</td><td>${miles(M.regP.length)}</td><td>${miles(M.pistas.length)}</td><td>${miles(errP)}</td></tr><tr><td>Vuelos</td><td>${miles(M.regV.length)}</td><td>${miles(M.vuelos.length)}</td><td>${miles(errV)}</td></tr></table>
-      <p class="nota">Cada registro se revisa en orden y se reporta solo su <b>primer</b> error. Un código repetido se detecta contra el «dueño»: el registro válido de línea más baja.</p>
-      <p class="titulo-panel" style="margin-top:12px">RF12 · no asignables (${miles(M.noAsignables.length)})</p>
-      <table><tr><th>vuelo</th><th>operación</th><th>categoría</th><th>motivo</th></tr>${M.noAsignables.slice(0, 200).map(n => `<tr class="noasig"><td class="mono">${esc(n.v.codigo)}</td><td>${n.v.operacion}</td><td>${n.v.categoria}</td><td>${esc(n.motivo)}</td></tr>`).join("") || "<tr><td colspan=4>Ninguno</td></tr>"}</table></div>
-      <div><p class="titulo-panel">errores.csv (${miles(M.errores.length)})</p><table><tr><th>archivo</th><th>línea</th><th>motivo</th></tr>${M.errores.slice(0, 300).map(e => `<tr class="invalida"><td>${esc(e.archivo)}</td><td class="mono">${e.linea}</td><td>${esc(e.motivo)}</td></tr>`).join("") || "<tr><td colspan=3>Sin errores</td></tr>"}</table>${M.errores.length > 300 ? `<p class="nota">… y ${miles(M.errores.length - 300)} más.</p>` : ""}</div></div>`;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-sec">Resultado (RF03)</p>
+      <table><tr><th></th><th class="n">Registros</th><th class="n">Válidos</th><th class="n">Inválidos</th></tr><tr><td>Pistas</td><td class="n">${miles(M.regP.length)}</td><td class="n">${miles(M.pistas.length)}</td><td class="n">${miles(errP)}</td></tr><tr><td>Vuelos</td><td class="n">${miles(M.regV.length)}</td><td class="n">${miles(M.vuelos.length)}</td><td class="n">${miles(errV)}</td></tr></table>
+      <p class="nota">Se reporta solo el primer error de cada registro. Un código repetido se compara con su «dueño»: el registro válido de línea más baja.</p>
+      <p class="titulo-sec" style="margin-top:22px">Vuelos sin pista posible (RF12)</p>
+      <table><tr><th>Vuelo</th><th>Operación</th><th>Categoría</th><th>Motivo</th></tr>${M.noAsignables.slice(0, 200).map(n => `<tr class="noasig"><td class="mono">${esc(n.v.codigo)}</td><td>${n.v.operacion}</td><td>${n.v.categoria}</td><td>${esc(n.motivo)}</td></tr>`).join("") || '<tr><td colspan="4" class="tenue">Ninguno</td></tr>'}</table></div>
+      <div><p class="titulo-sec">errores.csv</p><table><tr><th>Archivo</th><th class="n">Línea</th><th>Motivo</th></tr>${M.errores.slice(0, 300).map(e => `<tr class="invalida"><td>${esc(e.archivo)}</td><td class="n">${e.linea}</td><td>${esc(e.motivo)}</td></tr>`).join("") || '<tr><td colspan="3" class="tenue">Sin errores</td></tr>'}</table>${M.errores.length > 300 ? `<p class="nota">Se muestran 300 de ${miles(M.errores.length)}.</p>` : ""}</div></div>`;
   } else if (p === "operaciones") {
-    const n = hasta(M.ops, S.t, o => o.ini), ult = M.ops.slice(Math.max(0, n - 300), n).reverse();
-    c.innerHTML = `<p class="titulo-panel">operaciones.csv · ${miles(n)} de ${miles(M.ops.length)} asignadas hasta ${hora(Math.floor(S.t))} · la más reciente arriba</p>
-      <table><tr><th>código</th><th>aerolínea</th><th>operación</th><th>categoría</th><th>prioridad</th><th>pista</th><th>programada</th><th>inicio</th><th>fin</th><th>retraso</th></tr>${ult.map(o => `<tr><td class="mono">${esc(o.codigo)}</td><td>${esc(o.aerolinea)}</td><td>${o.operacion}</td><td>${o.categoria}</td><td>${o.prioridad === "Emergencia" ? "<b style='color:var(--emerg)'>Emergencia</b>" : o.prioridad}</td><td class="mono">${esc(o.pista)}</td><td class="mono">${hora(o.prog)}</td><td class="mono">${hora(o.ini)}</td><td class="mono">${hora(o.fin)}</td><td class="mono">${o.retraso}${o.retraso > 15 ? " · retrasado" : ""}</td></tr>`).join("")}</table>`;
+    const n = hasta(M.ops, S.t, o => o.ini), ult = M.ops.slice(Math.max(0, n - 200), n).reverse();
+    c.innerHTML = `<p class="titulo-sec">operaciones.csv · ${miles(n)} de ${miles(M.ops.length)} asignadas hasta ${hora(Math.floor(S.t))}</p>
+      <table><tr><th>Código</th><th>Aerolínea</th><th>Operación</th><th>Categoría</th><th>Prioridad</th><th>Pista</th><th>Programada</th><th>Inicio</th><th>Fin</th><th class="n">Retraso</th></tr>${ult.map(o => `<tr><td class="mono">${esc(o.codigo)}</td><td>${esc(o.aerolinea)}</td><td>${o.operacion}</td><td>${o.categoria}</td><td>${o.prioridad === "Emergencia" ? '<span class="etq rojo">Emergencia</span>' : o.prioridad}</td><td class="mono">${esc(o.pista)}</td><td class="num">${hora(o.prog)}</td><td class="num">${hora(o.ini)}</td><td class="num">${hora(o.fin)}</td><td class="n">${o.retraso} min</td></tr>`).join("") || '<tr><td colspan="10" class="tenue">Aún no hay operaciones asignadas.</td></tr>'}</table>`;
   } else if (p === "reporte") {
-    c.innerHTML = `<p class="titulo-panel">reporte.txt · el mismo texto que el programa imprimió en pantalla</p><pre>${esc(d.salida["reporte.txt"])}</pre>`;
+    c.innerHTML = `<p class="titulo-sec">reporte.txt</p><pre>${esc(d.salida["reporte.txt"])}</pre>`;
   } else {
-    const ns = d.etapasNs, filas = ns ? Object.entries(ns).map(([e, v]) => `<tr><td>${e}</td><td class="mono">${ms(v)}</td></tr>`).join("") : "<tr><td colspan=2>La referencia en Python no mide etapas.</td></tr>";
-    const resto = ns ? d.segundos * 1e9 - Object.values(ns).reduce((a, b) => a + b, 0) : null;
-    c.innerHTML = `<div class="dos"><div><p class="titulo-panel">Comando ejecutado</p><pre>$ ${esc(d.comando)}</pre>
-      <p class="nota">Código de salida ${d.codigo} · proceso completo ${Math.round(d.segundos * 1000).toLocaleString("es-CO")} ms${resto !== null ? ` · arranque de la JVM y resto: ${ms(Math.max(0, resto))}` : ""}.</p>
-      <p class="titulo-panel" style="margin-top:12px">Tiempo de cada etapa (System.nanoTime, opción --medir)</p><table><tr><th>etapa</th><th>tiempo</th></tr>${filas}</table>
-      ${d.construccion ? `<p class="titulo-panel" style="margin-top:12px">Construcción previa del .jar</p><pre>${esc(d.construccion.slice(-3000))}</pre>` : ""}</div>
-      <div><p class="titulo-panel">Archivos escritos en ${esc(d.rutas.salida)}/</p><table><tr><th>archivo</th><th>tamaño</th></tr>${Object.entries(d.tamanos).map(([a, t]) => `<tr><td class="mono">${a}</td><td>${miles(t)} bytes</td></tr>`).join("")}</table>
-      <p class="titulo-panel" style="margin-top:12px">Comprobaciones</p><table>
-      <tr><td>Los 3 archivos son idénticos a la salida esperada del escenario</td><td>${d.coincideEsperado === null ? "no aplica" : d.coincideEsperado ? "✓ sí" : "✗ no"}</td></tr>
-      <tr><td>Lo que salió en pantalla es igual a reporte.txt</td><td>${d.pantallaIgualReporte ? "✓ sí" : "✗ no"}</td></tr>
-      <tr><td>La bitácora (RN03 y RN05 recalculadas aquí) llega a las mismas asignaciones que el programa</td><td>${M.coincide ? "✓ sí" : "✗ no"}</td></tr></table>
-      ${d.errorEstandar ? `<p class="titulo-panel" style="margin-top:12px">Salida de error</p><pre>${esc(d.errorEstandar)}</pre>` : ""}</div></div>`;
+    const ns = d.etapasNs, resto = ns ? d.segundos * 1e9 - Object.values(ns).reduce((a, b) => a + b, 0) : null;
+    const filas = ns ? Object.entries(ns).map(([e, v]) => `<tr><td>${{ lectura: "Lectura", validacion: "Validación", simulacion: "Simulación", reportes: "Reportes", escritura: "Escritura" }[e]}</td><td class="n">${ms(v)}</td></tr>`).join("") : '<tr><td colspan="2" class="tenue">La referencia en Python no mide etapas.</td></tr>';
+    const fila = (texto, ok) => `<tr><td>${texto}</td><td class="n">${ok === null ? '<span class="tenue">No aplica</span>' : ok ? '<span class="pastilla ok">' + ICONO.ok + 'Sí</span>' : '<span class="pastilla mal">' + ICONO.no + 'No</span>'}</td></tr>`;
+    c.innerHTML = `<div class="dos"><div><p class="titulo-sec">Comando ejecutado</p><pre>$ ${esc(d.comando)}</pre>
+      <p class="nota num">Código de salida ${d.codigo} · proceso completo ${Math.round(d.segundos * 1000).toLocaleString("es-CO")} ms${resto !== null ? ` · arranque de la JVM y resto ${ms(Math.max(0, resto))}` : ""}</p>
+      <p class="titulo-sec" style="margin-top:22px">Tiempo por etapa (--medir)</p><table><tr><th>Etapa</th><th class="n">Tiempo</th></tr>${filas}</table>
+      ${d.construccion ? `<p class="titulo-sec" style="margin-top:22px">Construcción previa del .jar</p><pre>${esc(d.construccion.slice(-3000))}</pre>` : ""}</div>
+      <div><p class="titulo-sec">Archivos escritos en ${esc(d.rutas.salida)}/</p><table><tr><th>Archivo</th><th class="n">Tamaño</th></tr>${Object.entries(d.tamanos).map(([a, t]) => `<tr><td class="mono">${a}</td><td class="n">${miles(t)} bytes</td></tr>`).join("")}</table>
+      <p class="titulo-sec" style="margin-top:22px">Comprobaciones</p><table>
+      ${fila("Los 3 archivos son idénticos a la salida esperada", d.coincideEsperado)}
+      ${fila("Lo que salió en pantalla es igual a reporte.txt", d.pantallaIgualReporte)}
+      ${fila("La explicación (RN03 y RN05 recalculadas aquí) llega a las mismas asignaciones", M.coincide)}</table>
+      ${d.errorEstandar ? `<p class="titulo-sec" style="margin-top:22px">Salida de error</p><pre>${esc(d.errorEstandar)}</pre>` : ""}</div></div>`;
   }
 }
 
 // ============================================================== Eventos
 document.querySelectorAll(".pestana").forEach(b => b.onclick = () => { cancelarGuia(); abrirPestana(b.dataset.p); });
-document.querySelectorAll(".etapa").forEach(el => el.onclick = () => {
+document.querySelectorAll("#etapas li").forEach(el => el.onclick = () => {
   if (!S.M) return; cancelarGuia(); const n = +el.dataset.e; marcarEtapa(n);
   abrirPestana(["entrada", "validacion", "operaciones", "reporte", "ejecucion"][n - 1]);
   if (n === 3) { irA(S.M.t0); reproducir(); }
 });
 $("btnEjecutar").onclick = () => ejecutar({ lenguaje: $("selLenguaje").value, escenario: $("selEscenario").value });
-$("bPlay").onclick = () => { cancelarGuia(); S.jugando ? pausar() : reproducir(); };
+$("bPlay").onclick = () => { cancelarGuia(); entrarSimulacion(); S.jugando ? pausar() : reproducir(); };
 $("bAdelante").onclick = () => saltarEvento(1);
 $("bAtras").onclick = () => saltarEvento(-1);
-$("bInicio").onclick = () => { if (S.M) { cancelarGuia(); pausar(); irA(S.M.t0); } };
-$("bFin").onclick = () => { if (S.M) { cancelarGuia(); pausar(); irA(S.M.t1); } };
+$("bInicio").onclick = () => { if (S.M) { cancelarGuia(); pausar(); entrarSimulacion(); irA(S.M.t0); } };
+$("bFin").onclick = () => { if (S.M) { cancelarGuia(); pausar(); entrarSimulacion(); irA(S.M.t1); } };
 $("selVel").onchange = e => { S.vel = +e.target.value; };
 $("selVentana").onchange = e => { S.ventana = +e.target.value; dibujarTodo(); };
+$("btnHistorial").onclick = () => { S.historial = !S.historial; if (S.M) dibujarDecision(indicePaso(S.t)); };
+$("decisionCuerpo").onclick = e => { const b = e.target.closest("button[data-i]"); if (b && S.M) { cancelarGuia(); pausar(); irA(S.M.traza.pasos[+b.dataset.i].minuto); } };
 $("btnDatos").onclick = () => { if (!$("txtVuelos").value) cargarActual(); $("dlgDatos").showModal(); };
 $("btnCerrarDatos").onclick = () => $("dlgDatos").close();
 function cargarActual() {
-  const e = $("selEscenario").value;
-  fetch("/api/entrada?escenario=" + encodeURIComponent(e)).then(r => r.json()).then(d => {
-    if (d.error) { mostrarAviso("ERROR: " + d.error); return; }
+  fetch("/api/entrada?escenario=" + encodeURIComponent($("selEscenario").value)).then(r => r.json()).then(d => {
+    if (d.error) { mostrarAviso("Error: " + d.error); return; }
     $("txtPistas").value = d.pistas; $("txtVuelos").value = d.vuelos;
   }, () => mostrarAviso("No se pudo leer el escenario desde el servidor local."));
 }
 $("btnCargarActual").onclick = cargarActual;
 $("btnEjecutarPropios").onclick = () => { $("dlgDatos").close(); ejecutar({ lenguaje: $("selLenguaje").value, escenario: "propio", pistas: $("txtPistas").value, vuelos: $("txtVuelos").value }); };
 document.addEventListener("keydown", e => {
-  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT" || !S.M) return;
+  if (["TEXTAREA", "SELECT", "INPUT"].includes(e.target.tagName) || !S.M) return;
   if (e.key === " ") { e.preventDefault(); $("bPlay").click(); }
   if (e.key === "ArrowRight") saltarEvento(1);
   if (e.key === "ArrowLeft") saltarEvento(-1);
 });
 window.addEventListener("resize", () => dibujarTodo());
-iniciarSelectores(); cargarInfo();
+document.fonts.ready.then(() => dibujarTodo());
+iniciar();
 </script>
 </body>
 </html>

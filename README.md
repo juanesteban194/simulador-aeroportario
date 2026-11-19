@@ -67,7 +67,8 @@ abre en el navegador una torre de control que **ejecuta de verdad** el programa 
 
 Las asignaciones dibujadas son las de `operaciones.csv`. Las explicaciones se recalculan en la página y se comprueba
 que lleguen a las mismas asignaciones. El servidor (`interfaz/servidor.py`) solo usa la biblioteca estándar de
-Python y escucha en `127.0.0.1`.
+Python y escucha en `127.0.0.1`. Las tipografías (Inter y JetBrains Mono, licencia SIL OFL 1.1) están en
+`interfaz/fuentes/`, así que la interfaz funciona sin internet.
 
 Las salidas quedan en `salida/<lenguaje>/<escenario>/`. En IntelliJ están las mismas opciones en la carpeta
 **Simulador** del selector de ejecución (Run): «Simular · Java», «· Scala», «· Clojure», «· Python (referencia)»,

@@ -992,7 +992,7 @@ A: 400 ms, 300 MB, 150.000 vuelos/s; B: 320 ms, 340 MB, 165.000; C: 520 ms, 420 
 | `informe/generar_informe.py` + `contenido.py` + `resultados.py` + `construir_docx.js` | Genera `entrega/Informe_tecnico.docx` desde los resultados |
 | `.run/Verificar.run.xml` | Configuración compartida de IntelliJ "Verificar equivalencia" |
 | `simular.sh` | Lanzador del simulador en los 4 lenguajes (Java, Scala, Clojure y Python de referencia): resuelve el escenario, construye el `.jar` si falta o si el código cambió, ejecuta con las mismas opciones de JVM que el experimento y compara con la salida esperada; `todos` ejecuta los 4 y compara byte a byte; sin argumentos muestra un menú. Compatible con el bash 3.2 de macOS |
-| `interfaz/servidor.py` + `interfaz/index.html` | Interfaz gráfica en tiempo real. El servidor local (biblioteca estándar de Python, solo en 127.0.0.1) ejecuta de verdad el programa elegido con `--medir` (construye el `.jar` si hace falta) sobre un escenario (E0, V1, V2, V3, C1, X1) o sobre datos propios, y devuelve entradas, salidas, pantalla, tiempos y comprobaciones. La página reproduce la ejecución: etapas con tiempos reales, reloj por eventos, pistas en línea de tiempo, 12 filas, bitácora que explica cada decisión (RN03/RN05 recalculadas y comprobadas contra `operaciones.csv`), validación, reporte y archivos. Sin try/catch |
+| `interfaz/servidor.py` + `interfaz/index.html` | Interfaz gráfica en tiempo real. El servidor local (biblioteca estándar de Python, solo en 127.0.0.1) ejecuta de verdad el programa elegido con `--medir` (construye el `.jar` si hace falta) sobre un escenario (E0, V1, V2, V3, C1, X1) o sobre datos propios, y devuelve entradas, salidas, pantalla, tiempos y comprobaciones. La página reproduce la ejecución: etapas con tiempos reales, reloj por eventos, pistas en línea de tiempo, 12 filas, bitácora que explica cada decisión (RN03/RN05 recalculadas y comprobadas contra `operaciones.csv`), validación, reporte y archivos. Diseño claro y minimalista con las tipografías Inter y JetBrains Mono incluidas en `interfaz/fuentes/` (licencia SIL OFL 1.1). Sin try/catch |
 | `.run/Simular_*.run.xml` | Carpeta "Simulador" de IntelliJ: una configuración por lenguaje, "los 4 y comparar" y "menú" (en la terminal de IntelliJ) |
 
 ---
@@ -4305,6 +4305,8 @@ from urllib.parse import parse_qs, urlparse
 
 RAIZ = Path(__file__).resolve().parent.parent
 PAGINA = RAIZ / "interfaz" / "index.html"
+# Tipografías incluidas en el repositorio (licencia SIL OFL 1.1): la página no depende de internet.
+FUENTES = {"/fuentes/inter.woff2": "inter.woff2", "/fuentes/jetbrains-mono.woff2": "jetbrains-mono.woff2"}
 SALIDA = RAIZ / "salida" / "interfaz"
 ARCHIVOS = ("operaciones.csv", "errores.csv", "reporte.txt")
 ETAPAS = ("lectura", "validacion", "simulacion", "reportes", "escritura")
@@ -4494,6 +4496,8 @@ class Manejador(BaseHTTPRequestHandler):
         ruta = urlparse(self.path)
         if ruta.path in ("/", "/index.html"):
             self.responder(200, PAGINA.read_bytes(), "text/html; charset=utf-8")
+        elif ruta.path in FUENTES:
+            self.responder(200, (RAIZ / "interfaz" / "fuentes" / FUENTES[ruta.path]).read_bytes(), "font/woff2")
         elif ruta.path == "/api/info":
             self.json(200, info())
         elif ruta.path == "/api/entrada":
@@ -4548,7 +4552,7 @@ if __name__ == "__main__":
 
 ### `interfaz/index.html` (página de la interfaz gráfica, resumen)
 
-Una sola página con HTML, CSS y JavaScript, sin bibliotecas externas.
+Una sola página con HTML, CSS y JavaScript, sin bibliotecas externas. Fondo claro y minimalista, con una sola cosa importante por panel: etapas arriba; simulación con reloj y pistas; «Evento actual» (el historial se abre aparte); filas de espera; pestañas de detalle.
 
 - **Reglas para explicar:** `habilitada`, `compatible`, `prioridad` (RN05) y `motivoNoAsignable` (RN09).
 - **`construirModelo`:**
